@@ -80,6 +80,56 @@ public class ChallanDAO {
         return challans;
     }
 
+    /**
+     * Get a summary of pending (unpaid) challans for a vehicle.
+     * A challan is considered pending when it is not paid and not closed
+     * (cancelled/expired). Returns "count" and "totalFine" keys.
+     */
+    public Map<String, Object> getPendingChallanSummary(String vehicleNo) {
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("count", 0);
+        summary.put("totalFine", 0);
+
+        if (vehicleNo == null || vehicleNo.trim().isEmpty()) {
+            return summary;
+        }
+
+        String normalized = vehicleNo.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConfig.getConnection();
+            String sql = "SELECT COUNT(*) AS cnt, NVL(SUM(total_fine_amount), 0) AS amt " +
+                         "FROM challan " +
+                         "WHERE REPLACE(REPLACE(UPPER(vehicle_no), '-', ''), ' ', '') = ? " +
+                         "AND NVL(UPPER(payment_status), 'UNPAID') <> 'PAID' " +
+                         "AND NVL(UPPER(status), 'PENDING_PAYMENT') NOT IN ('PAID', 'CANCELLED', 'EXPIRED')";
+
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, normalized);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                summary.put("count", rs.getInt("cnt"));
+                summary.put("totalFine", rs.getInt("amt"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error checking pending challans: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return summary;
+    }
+
     public boolean updateChallanStatus(String challanNumber, String status, String paymentReference) {
         Connection conn = null;
         PreparedStatement pstmt = null;

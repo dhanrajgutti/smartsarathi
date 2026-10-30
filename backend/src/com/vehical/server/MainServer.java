@@ -3,6 +3,7 @@ package com.vehical.server;
 import com.vehical.dao.UserDAO;
 import com.vehical.dao.VehicleDAO;
 import com.vehical.dao.PUCCertificateDAO;
+import com.vehical.dao.PolicyDAO;
 import com.vehical.dao.ChallanDAO;
 import com.vehical.dao.AdminDAO;
 import com.vehical.model.User;
@@ -34,6 +35,8 @@ public class MainServer {
         httpServer.createContext("/api/vehicle/register", new VehicleRegisterHandler());
         httpServer.createContext("/puc/issue", new PUCIssueHandler());
         httpServer.createContext("/puc/history", new PUCHistoryHandler());
+        httpServer.createContext("/api/insurance/policy", new InsurancePolicyHandler());
+        httpServer.createContext("/api/insurance/history", new InsuranceHistoryHandler());
         httpServer.createContext("/api/challan/pay", new ChallanPayHandler());
         httpServer.createContext("/api/challan/vehicle", new ChallanVehicleHandler());
         
@@ -63,6 +66,8 @@ public class MainServer {
         System.out.println("  POST http://localhost:" + PORT + "/api/vehicle/register");
         System.out.println("  POST http://localhost:" + PORT + "/puc/issue");
         System.out.println("  GET  http://localhost:" + PORT + "/puc/history");
+        System.out.println("  POST http://localhost:" + PORT + "/api/insurance/policy");
+        System.out.println("  GET  http://localhost:" + PORT + "/api/insurance/history");
         System.out.println("  POST http://localhost:" + PORT + "/api/challan/pay");
         System.out.println("  GET  http://localhost:" + PORT + "/api/challan/vehicle?vehicleNo=MH-04-AB-1234");
         System.out.println("  GET  http://localhost:" + PORT + "/api/admin/users");
@@ -519,6 +524,26 @@ public class MainServer {
                     return;
                 }
 
+                // Block PUC issuance when the vehicle has pending (unpaid) challans
+                ChallanDAO challanDAO = new ChallanDAO();
+                Map<String, Object> pending = challanDAO.getPendingChallanSummary(vehicleNo);
+                int pendingCount = ((Number) pending.get("count")).intValue();
+                int pendingFine = ((Number) pending.get("totalFine")).intValue();
+
+                if (pendingCount > 0) {
+                    String blockedMessage = "PUC service blocked: vehicle " + vehicleNo +
+                        " has " + pendingCount + " pending challan(s) with total fine Rs." + pendingFine +
+                        ". Clear all pending challans before applying for PUC.";
+                    String blockedResponse = String.format(
+                        "{\"success\": false, \"message\": \"%s\", \"data\": {" +
+                        "\"blocked\": true, \"pendingChallanCount\": %d, \"pendingFineAmount\": %d}}",
+                        blockedMessage, pendingCount, pendingFine
+                    );
+                    System.out.println("PUC blocked for " + vehicleNo + " - " + pendingCount + " pending challan(s)");
+                    sendResponse(exchange, 403, blockedResponse);
+                    return;
+                }
+
                 // Parse numeric values
                 Double odometerKm = odometerKmStr != null && !odometerKmStr.isEmpty() ? Double.parseDouble(odometerKmStr) : null;
                 Double coPercent = coPercentStr != null && !coPercentStr.isEmpty() ? Double.parseDouble(coPercentStr) : null;
@@ -735,6 +760,162 @@ public class MainServer {
 
             } catch (Exception e) {
                 System.err.println("PUC history error: " + e.getMessage());
+                e.printStackTrace();
+                sendResponse(exchange, 500, "{\"success\": false, \"message\": \"Server error: " + e.getMessage() + "\"}");
+            }
+        }
+    }
+
+    // ==================== INSURANCE API HANDLERS ====================
+
+    static class InsurancePolicyHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!exchange.getRequestMethod().equals("POST")) {
+                sendResponse(exchange, 405, "{\"success\": false, \"message\": \"Method not allowed\"}");
+                return;
+            }
+
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+
+            if (exchange.getRequestMethod().equals("OPTIONS")) {
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
+
+            try {
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                Map<String, String> params = parseJson(body);
+
+                String policyNumber = params.get("policyNumber");
+                String vehicleNo = params.get("vehicleNo");
+                String ownerName = params.get("ownerName");
+                String ownerMobile = params.get("ownerMobile");
+                String ownerEmail = params.get("ownerEmail");
+                String vehicleType = params.get("vehicleType");
+                String makeModel = params.get("makeModel");
+                String fuelType = params.get("fuelType");
+                String engineNumber = params.get("engineNumber");
+                String chassisNumber = params.get("chassisNumber");
+                String policyCategory = params.get("policyCategory");
+                String policyType = params.get("policyType");
+                String idvStr = params.get("idv");
+                String premiumStr = params.get("premium");
+                String startDate = params.get("startDate");
+                String endDate = params.get("endDate");
+                String issuedByUserIdStr = params.get("issuedByUserId");
+                String issuedByName = params.get("issuedByName");
+
+                if (policyNumber == null || policyNumber.isEmpty() || vehicleNo == null || vehicleNo.isEmpty()) {
+                    sendResponse(exchange, 400, "{\"success\": false, \"message\": \"Policy number and vehicle number are required\"}");
+                    return;
+                }
+
+                // Block insurance issuance/renewal when the vehicle has pending (unpaid) challans
+                ChallanDAO challanDAO = new ChallanDAO();
+                Map<String, Object> pendingSummary = challanDAO.getPendingChallanSummary(vehicleNo);
+                int pendingCount = ((Number) pendingSummary.get("count")).intValue();
+                int pendingFine = ((Number) pendingSummary.get("totalFine")).intValue();
+
+                if (pendingCount > 0) {
+                    String blockedMessage = "Insurance blocked: vehicle " + vehicleNo +
+                        " has " + pendingCount + " pending challan(s) with total fine Rs." + pendingFine +
+                        ". Clear all pending challans before issuing or renewing insurance.";
+                    String blockedResponse = String.format(
+                        "{\"success\": false, \"message\": \"%s\", \"data\": {" +
+                        "\"blocked\": true, \"pendingChallanCount\": %d, \"pendingFineAmount\": %d}}",
+                        blockedMessage, pendingCount, pendingFine
+                    );
+                    System.out.println("Insurance blocked for " + vehicleNo + " - " + pendingCount + " pending challan(s)");
+                    sendResponse(exchange, 403, blockedResponse);
+                    return;
+                }
+
+                Double idv = idvStr != null && !idvStr.isEmpty() ? Double.parseDouble(idvStr) : null;
+                Double premium = premiumStr != null && !premiumStr.isEmpty() ? Double.parseDouble(premiumStr) : null;
+                Long issuedByUserId = issuedByUserIdStr != null && !issuedByUserIdStr.isEmpty() ? Long.parseLong(issuedByUserIdStr) : null;
+
+                boolean success = PolicyDAO.insertInsurancePolicy(
+                    policyNumber, vehicleNo, ownerName, ownerMobile, ownerEmail,
+                    vehicleType, makeModel, fuelType, engineNumber, chassisNumber,
+                    policyCategory, policyType, idv, premium, startDate, endDate,
+                    issuedByUserId, issuedByName
+                );
+
+                if (success) {
+                    // Reflect the issued policy on the vehicle record
+                    PolicyDAO.updateVehicleInsuranceStatus(vehicleNo, "Valid");
+
+                    String responseData = String.format(
+                        "{\"success\": true, \"message\": \"Insurance policy issued successfully\", \"data\": {" +
+                        "\"policyNumber\": \"%s\", \"vehicleNo\": \"%s\", \"status\": \"Issued\"}}",
+                        policyNumber, vehicleNo
+                    );
+                    sendResponse(exchange, 201, responseData);
+                } else {
+                    sendResponse(exchange, 500, "{\"success\": false, \"message\": \"Failed to issue insurance policy\"}");
+                }
+
+            } catch (NumberFormatException e) {
+                System.err.println("Insurance issue error - invalid number format: " + e.getMessage());
+                e.printStackTrace();
+                sendResponse(exchange, 400, "{\"success\": false, \"message\": \"Invalid numeric value in request\"}");
+            } catch (Exception e) {
+                System.err.println("Insurance issue error: " + e.getMessage());
+                e.printStackTrace();
+                sendResponse(exchange, 500, "{\"success\": false, \"message\": \"Server error: " + e.getMessage() + "\"}");
+            }
+        }
+    }
+
+    static class InsuranceHistoryHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!exchange.getRequestMethod().equals("GET")) {
+                sendResponse(exchange, 405, "{\"success\": false, \"message\": \"Method not allowed\"}");
+                return;
+            }
+
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+
+            try {
+                java.util.List<java.util.Map<String, Object>> policies = PolicyDAO.getAllInsurancePolicies();
+
+                StringBuilder json = new StringBuilder();
+                json.append("{\"success\": true, \"message\": \"Insurance policies retrieved\", \"data\": [");
+
+                for (int i = 0; i < policies.size(); i++) {
+                    if (i > 0) json.append(",");
+                    java.util.Map<String, Object> p = policies.get(i);
+                    json.append("{");
+                    json.append("\"policyId\":").append(p.get("policyId")).append(",");
+                    json.append("\"policyNumber\":\"").append(p.get("policyNumber") != null ? p.get("policyNumber") : "").append("\",");
+                    json.append("\"vehicleNo\":\"").append(p.get("vehicleNo") != null ? p.get("vehicleNo") : "").append("\",");
+                    json.append("\"ownerName\":\"").append(p.get("ownerName") != null ? p.get("ownerName") : "").append("\",");
+                    json.append("\"ownerMobile\":\"").append(p.get("ownerMobile") != null ? p.get("ownerMobile") : "").append("\",");
+                    json.append("\"ownerEmail\":\"").append(p.get("ownerEmail") != null ? p.get("ownerEmail") : "").append("\",");
+                    json.append("\"vehicleType\":\"").append(p.get("vehicleType") != null ? p.get("vehicleType") : "").append("\",");
+                    json.append("\"makeModel\":\"").append(p.get("makeModel") != null ? p.get("makeModel") : "").append("\",");
+                    json.append("\"fuelType\":\"").append(p.get("fuelType") != null ? p.get("fuelType") : "").append("\",");
+                    json.append("\"policyCategory\":\"").append(p.get("policyCategory") != null ? p.get("policyCategory") : "").append("\",");
+                    json.append("\"policyType\":\"").append(p.get("policyType") != null ? p.get("policyType") : "").append("\",");
+                    json.append("\"idv\":").append(p.get("idv") != null ? p.get("idv") : "null").append(",");
+                    json.append("\"premium\":").append(p.get("premium") != null ? p.get("premium") : "null").append(",");
+                    json.append("\"startDate\":\"").append(p.get("startDate") != null ? p.get("startDate") : "").append("\",");
+                    json.append("\"endDate\":\"").append(p.get("endDate") != null ? p.get("endDate") : "").append("\",");
+                    json.append("\"status\":\"").append(p.get("status") != null ? p.get("status") : "").append("\",");
+                    json.append("\"issuedByName\":\"").append(p.get("issuedByName") != null ? p.get("issuedByName") : "").append("\",");
+                    json.append("\"createdAt\":\"").append(p.get("createdAt") != null ? p.get("createdAt") : "").append("\"");
+                    json.append("}");
+                }
+
+                json.append("]}");
+                sendResponse(exchange, 200, json.toString());
+
+            } catch (Exception e) {
+                System.err.println("Insurance history error: " + e.getMessage());
                 e.printStackTrace();
                 sendResponse(exchange, 500, "{\"success\": false, \"message\": \"Server error: " + e.getMessage() + "\"}");
             }
@@ -1000,7 +1181,10 @@ public class MainServer {
                         json.append("\"violationIds\":\"").append(challan.get("violationIds")).append("\",");
                         json.append("\"totalFineAmount\":").append(challan.get("totalFineAmount")).append(",");
                         json.append("\"challanDate\":\"").append(challan.get("challanDate")).append("\",");
-                        json.append("\"location\":\"").append(challan.get("location")).append("\",");
+                        json.append("\"challanTime\":\"").append(challan.get("challanTime") != null ? challan.get("challanTime") : "").append("\",");
+                        json.append("\"ownerName\":\"").append(challan.get("ownerName") != null ? challan.get("ownerName") : "").append("\",");
+                        json.append("\"violationName\":\"").append(challan.get("violationName") != null ? challan.get("violationName") : "").append("\",");
+                        json.append("\"location\":\"").append(challan.get("location") != null ? challan.get("location") : "").append("\",");
                         json.append("\"status\":\"").append(challan.get("status")).append("\",");
                         json.append("\"paymentStatus\":\"").append(challan.get("paymentStatus")).append("\"");
                         json.append("}");

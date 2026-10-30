@@ -16,6 +16,13 @@ END;
 /
 
 BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE insurance_policy CASCADE CONSTRAINTS';
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
     EXECUTE IMMEDIATE 'DROP TABLE challan CASCADE CONSTRAINTS';
 EXCEPTION
     WHEN OTHERS THEN NULL;
@@ -94,6 +101,13 @@ END;
 
 BEGIN
     EXECUTE IMMEDIATE 'DROP SEQUENCE puc_certificate_seq';
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE insurance_policy_seq';
 EXCEPTION
     WHEN OTHERS THEN NULL;
 END;
@@ -586,6 +600,52 @@ INSERT INTO puc_certificate (puc_id, certificate_number, vehicle_no, owner_name,
 
 COMMIT;
 
+-- =============== INSURANCE POLICY MODULE TABLES ===============
+
+CREATE TABLE insurance_policy (
+    policy_id NUMBER(19) PRIMARY KEY,
+    policy_number VARCHAR2(40) NOT NULL UNIQUE,
+    vehicle_no VARCHAR2(20) NOT NULL,
+    owner_name VARCHAR2(150),
+    owner_mobile VARCHAR2(20),
+    owner_email VARCHAR2(150),
+    vehicle_type VARCHAR2(60),
+    make_model VARCHAR2(150),
+    fuel_type VARCHAR2(30),
+    engine_number VARCHAR2(50),
+    chassis_number VARCHAR2(50),
+    policy_category VARCHAR2(60),
+    policy_type VARCHAR2(60),
+    idv NUMBER(12, 2),
+    premium NUMBER(12, 2),
+    start_date DATE,
+    end_date DATE,
+    status VARCHAR2(20) DEFAULT 'Issued',
+    issued_by_user_id NUMBER(19),
+    issued_by_name VARCHAR2(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_ins_vehicle ON insurance_policy(vehicle_no);
+CREATE INDEX idx_ins_status ON insurance_policy(status);
+CREATE INDEX idx_ins_end_date ON insurance_policy(end_date);
+
+CREATE SEQUENCE insurance_policy_seq START WITH 1 INCREMENT BY 1;
+
+CREATE OR REPLACE TRIGGER insurance_policy_trg
+BEFORE INSERT ON insurance_policy
+FOR EACH ROW
+BEGIN
+    IF :NEW.policy_id IS NULL THEN
+        SELECT insurance_policy_seq.NEXTVAL INTO :NEW.policy_id FROM dual;
+    END IF;
+    :NEW.updated_at := SYSTIMESTAMP;
+END;
+/
+
+COMMIT;
+
 -- =============== DIAGNOSTIC QUERIES ===============
 
 -- Check all objects status
@@ -602,5 +662,5 @@ ORDER BY trigger_name;
 -- Verify all tables were created
 SELECT table_name
 FROM user_tables
-WHERE table_name IN ('USERS', 'VIOLATION_MASTER', 'OWNER', 'VEHICLE', 'POLICE_OFFICER', 'CHALLAN', 'EVIDENCE', 'PUC_CERTIFICATE')
+WHERE table_name IN ('USERS', 'VIOLATION_MASTER', 'OWNER', 'VEHICLE', 'POLICE_OFFICER', 'CHALLAN', 'EVIDENCE', 'PUC_CERTIFICATE', 'INSURANCE_POLICY')
 ORDER BY table_name;

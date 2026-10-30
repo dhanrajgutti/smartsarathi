@@ -349,6 +349,126 @@
             .vehicle-grid { grid-template-columns: 1fr; }
         }
 
+        /* ====== Modal Pattern ====== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+            animation: modalFadeIn .3s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-card {
+            background: #FFFFFF;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 480px;
+            overflow: hidden;
+            animation: modalPop .4s cubic-bezier(.17, .89, .32, 1.28);
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.9) translateY(20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            padding: 24px 24px 0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .modal-icon-wrap {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+        .modal-icon-wrap.error {
+            background: #FEF2F2;
+            color: #DC2626;
+        }
+        .modal-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0F172A;
+            letter-spacing: -0.3px;
+        }
+        .modal-body {
+            padding: 20px 24px 24px;
+        }
+        .modal-msg {
+            font-size: 15px;
+            color: #475569;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .modal-details {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .modal-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-detail-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748B;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .modal-detail-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0F172A;
+        }
+        .modal-footer {
+            padding: 0 24px 24px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .modal-btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-family: 'Inter', sans-serif;
+        }
+        .modal-btn-primary {
+            background: #0F172A;
+            color: #FFFFFF;
+        }
+        .modal-btn-primary:hover {
+            background: #1E293B;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
         .vehicle-field {
             display: flex;
             flex-direction: column;
@@ -379,6 +499,33 @@
         }
         .vehicle-field-value.valid-green {
             color: #059669;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-valid {
+            background: #ECFDF5;
+            color: #059669;
+            border: 1px solid #A7F3D0;
+        }
+        .status-expired {
+            background: #FEF2F2;
+            color: #DC2626;
+            border: 1px solid #FECACA;
+        }
+        .status-na {
+            background: #F8FAFC;
+            color: #64748B;
+            border: 1px solid #E2E8F0;
         }
 
         /* ====== Insurance Details Grid ====== */
@@ -1196,9 +1343,14 @@
             .ins-hero,
             .func-breadcrumb,
             .ins-card:not(.receipt-scroll-wrap ~ .ins-card),
-            .ins-receipt-head-actions,
-            .receipt-scroll-wrap {
+            .ins-receipt-head-actions {
                 display: none !important;
+            }
+            .receipt-scroll-wrap {
+                display: block !important;
+                overflow: visible !important;
+                max-height: none !important;
+                height: auto !important;
             }
             .app-shell {
                 display: block !important;
@@ -1250,6 +1402,10 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
+        }
+        /* Hide standard hero card as requested by user */
+        .func-page-hero {
+            display: none !important;
         }
     </style>
 </head>
@@ -1321,44 +1477,48 @@
                 <div class="vehicle-grid">
                     <div class="vehicle-field">
                         <div class="vehicle-field-label">Vehicle Number</div>
-                        <div class="vehicle-field-value" id="pv_vehicleNo">MH12AB1234</div>
+                        <div class="vehicle-field-value" id="pv_vehicleNo"></div>
                     </div>
                     <div class="vehicle-field">
                         <div class="vehicle-field-label">Owner Name</div>
-                        <div class="vehicle-field-value" id="pv_ownerName">Rohit Sharma</div>
+                        <div class="vehicle-field-value" id="pv_ownerName"></div>
                     </div>
                     <div class="vehicle-field">
                         <div class="vehicle-field-label">Vehicle Type</div>
-                        <div class="vehicle-field-value" id="pv_vehicleType">PRIVATE CAR</div>
+                        <div class="vehicle-field-value" id="pv_vehicleType"></div>
                     </div>
                     <div class="vehicle-field">
                         <div class="vehicle-field-label">Fuel Type</div>
-                        <div class="vehicle-field-value" id="pv_fuelType">PETROL</div>
+                        <div class="vehicle-field-value" id="pv_fuelType"></div>
                     </div>
                     <div class="vehicle-field">
                         <div class="vehicle-field-label">Registration Date</div>
-                        <div class="vehicle-field-value" id="pv_regDate">15-Feb-2022</div>
+                        <div class="vehicle-field-value" id="pv_regDate"></div>
                     </div>
 
                     <div class="vehicle-field">
                         <div class="vehicle-field-label">Make / Model</div>
-                        <div class="vehicle-field-value" id="pv_makeModel">Maruti Suzuki / Swift VXI</div>
+                        <div class="vehicle-field-value" id="pv_makeModel"></div>
                     </div>
                     <div class="vehicle-field">
                         <div class="vehicle-field-label">Chassis Number</div>
-                        <div class="vehicle-field-value" id="pv_chassis">MA3EDE81S00123456</div>
+                        <div class="vehicle-field-value" id="pv_chassis"></div>
                     </div>
                     <div class="vehicle-field">
                         <div class="vehicle-field-label">Engine Number</div>
-                        <div class="vehicle-field-value" id="pv_engine">K12MN1234567</div>
+                        <div class="vehicle-field-value" id="pv_engine"></div>
                     </div>
                     <div class="vehicle-field">
                         <div class="vehicle-field-label">Seating Capacity</div>
-                        <div class="vehicle-field-value" id="pv_seating">5</div>
+                        <div class="vehicle-field-value" id="pv_seating"></div>
                     </div>
                     <div class="vehicle-field">
-                        <div class="vehicle-field-label">PUC Valid Upto</div>
-                        <div class="vehicle-field-value valid-green" id="pv_pucUpto">10-Jan-2026</div>
+                        <div class="vehicle-field-label">Insurance Status</div>
+                        <div id="pv_insStatus"></div>
+                    </div>
+                    <div class="vehicle-field">
+                        <div class="vehicle-field-label">PUC Status</div>
+                        <div id="pv_pucStatus"></div>
                     </div>
                 </div>
             </section>
@@ -1391,14 +1551,14 @@
 
                     <div class="ins-form-group">
                         <label class="ins-form-label">Policy Number <span class="ins-required">*</span></label>
-                        <input type="text" class="ins-input" id="f_policyNo" value="BAJ1234567890" placeholder="Enter Policy Number">
+                        <input type="text" class="ins-input" id="f_policyNo" placeholder="Enter Policy Number">
                     </div>
 
                     <div class="ins-form-group">
                         <label class="ins-form-label">IDV (Insured Declared Value) <span class="ins-required">*</span></label>
                         <div class="ins-input-rupee">
                             <span class="rupee-prefix">₹</span>
-                            <input type="number" class="ins-input" id="f_idv" value="450000" placeholder="e.g. 450000">
+                            <input type="number" class="ins-input" id="f_idv" placeholder="e.g. 450000">
                         </div>
                     </div>
 
@@ -1414,21 +1574,31 @@
                     </div>
 
                     <div class="ins-form-group">
+                        <label class="ins-form-label">Policy Duration <span class="ins-required">*</span></label>
+                        <select class="ins-select" id="f_duration">
+                            <option value="1">1 Year</option>
+                            <option value="2">2 Years</option>
+                            <option value="3">3 Years</option>
+                            <option value="5">5 Years</option>
+                        </select>
+                    </div>
+
+                    <div class="ins-form-group">
                         <label class="ins-form-label">Policy End Date <span class="ins-required">*</span></label>
-                        <input type="date" class="ins-input" id="f_endDate" value="2026-05-07">
+                        <input type="date" class="ins-input" id="f_endDate" readonly>
                     </div>
 
                     <div class="ins-form-group">
                         <label class="ins-form-label">Premium Amount (₹) <span class="ins-required">*</span></label>
                         <div class="ins-input-rupee">
                             <span class="rupee-prefix">₹</span>
-                            <input type="number" class="ins-input" id="f_premium" value="12678" placeholder="e.g. 12678">
+                            <input type="number" class="ins-input" id="f_premium" placeholder="e.g. 12678">
                         </div>
                     </div>
 
                     <div class="ins-form-group">
                         <label class="ins-form-label">Policy Start Date <span class="ins-required">*</span></label>
-                        <input type="date" class="ins-input" id="f_startDate" value="2025-05-08">
+                        <input type="date" class="ins-input" id="f_startDate">
                     </div>
                 </div>
 
@@ -1629,17 +1799,17 @@
                                         <th class="lbl-cell">Engine No.</th>
                                         <td class="val-cell" id="mr_engine2">E81SXXXXXXXXXXXX</td>
                                         <th class="lbl-cell">Body Type</th>
-                                        <td class="val-cell">HATCHBACK</td>
+                                        <td class="val-cell" id="mr_bodyType">NA</td>
                                         <th class="lbl-cell">Cubic Capacity</th>
-                                        <td class="val-cell">1197 CC</td>
+                                        <td class="val-cell" id="mr_cc">NA</td>
                                     </tr>
                                     <tr>
                                         <th class="lbl-cell">Seating Capacity</th>
                                         <td class="val-cell" id="mr_seatCap">5 (INCLUDING DRIVER)</td>
                                         <th class="lbl-cell">Unladen Weight</th>
-                                        <td class="val-cell">965 KG</td>
+                                        <td class="val-cell" id="mr_unladen">NA</td>
                                         <th class="lbl-cell">GVW</th>
-                                        <td class="val-cell">1,415 KG</td>
+                                        <td class="val-cell" id="mr_gvw">NA</td>
                                         <th class="lbl-cell">NCB (%)</th>
                                         <td class="val-cell" id="mr_ncbPct">20%</td>
                                     </tr>
@@ -1725,11 +1895,11 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>VIKRAM KAPOOR</td>
-                                        <td>45</td>
-                                        <td>FATHER</td>
-                                        <td>VIKRAM KAPOOR</td>
-                                        <td>FATHER</td>
+                                        <td id="mr_nomName">NA</td>
+                                        <td id="mr_nomAge">NA</td>
+                                        <td id="mr_nomRel">NA</td>
+                                        <td id="mr_nomAppointee">NA</td>
+                                        <td id="mr_nomAppRel">NA</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1760,7 +1930,38 @@
         </div>
     </main>
 
-    <script src="../js/data.js"></script>
+    <!-- Insurance Blocked Modal -->
+    <div id="blockModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-icon-wrap error">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <h3 class="modal-title">Insurance Blocked</h3>
+            </div>
+            <div class="modal-body">
+                <p class="modal-msg" id="blockModalMsg"></p>
+                <div class="modal-details">
+                    <div class="modal-detail-row">
+                        <span class="modal-detail-label">Vehicle Number</span>
+                        <span class="modal-detail-value" id="blockModalVehicleNo"></span>
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="modal-detail-label">Pending Challans</span>
+                        <span class="modal-detail-value" id="blockModalChallanCount"></span>
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="modal-detail-label">Total Fine Amount</span>
+                        <span class="modal-detail-value" style="color: #DC2626;" id="blockModalFineAmount"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn modal-btn-primary" id="btnCloseBlockModal">Understood</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/dashboard.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -1772,11 +1973,6 @@
                 pageIcon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
                 activeMenuKey: 'newPolicy'
             });
-
-            // Show success toast on page load (simulating fetched vehicle)
-            setTimeout(function() {
-                document.getElementById('successToast').classList.add('visible');
-            }, 400);
 
             function formatDateDDMMYYYY(dateStr) {
                 if (!dateStr) return '';
@@ -1827,7 +2023,51 @@
 
             function getEl(id) { return document.getElementById(id); }
 
-            // Autocomplete functionality
+            // Holds the vehicle record fetched from the database for the current receipt
+            let currentVehicle = null;
+
+            // Fetch vehicle data from backend API
+            async function fetchVehicleFromDatabase(vehicleNo) {
+                try {
+                    const response = await fetch(`/api/vehicle/lookup?vehicleNo=${encodeURIComponent(vehicleNo)}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.vehicle) {
+                        return data.vehicle;
+                    } else {
+                        console.error('Vehicle not found:', data.message);
+                        return null;
+                    }
+                } catch (error) {
+                    console.error('Error fetching vehicle:', error);
+                    return null;
+                }
+            }
+
+            // Fetch the vehicle's challans from the database and calculate pending summary
+            async function fetchPendingChallanSummary(vehicleNo) {
+                try {
+                    const response = await fetch(`/api/challan/vehicle?vehicleNo=${encodeURIComponent(vehicleNo)}`);
+                    const data = await response.json();
+                    if (!data.success || !Array.isArray(data.data)) return { count: 0, totalFine: 0 };
+                    
+                    const pending = data.data.filter(function(c) {
+                        const status = (c.status || '').toUpperCase();
+                        const payStatus = (c.paymentStatus || 'UNPAID').toUpperCase();
+                        if (payStatus === 'PAID') return false;
+                        if (status === 'PAID' || status === 'CANCELLED' || status === 'EXPIRED') return false;
+                        return true;
+                    });
+
+                    const totalFine = pending.reduce((sum, c) => sum + (Number(c.totalFineAmount) || 0), 0);
+                    return { count: pending.length, totalFine: totalFine };
+                } catch (error) {
+                    console.error('Error fetching challans:', error);
+                    return { count: 0, totalFine: 0 };
+                }
+            }
+
+            // Autocomplete functionality - using backend API
             const vehicleInput = getEl('f_vehicleNo');
             const autocompleteDropdown = getEl('autocompleteDropdown');
             let debounceTimer;
@@ -1841,76 +2081,99 @@
                     return;
                 }
                 
-                debounceTimer = setTimeout(() => {
-                    if (!window.VehicleData || !VehicleData.VEHICLES) {
-                        autocompleteDropdown.classList.remove('visible');
-                        return;
-                    }
-                    
-                    const matches = VehicleData.VEHICLES.filter(v => {
-                        const normReg = v.reg.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                        return normReg.includes(query.replace(/[^a-zA-Z0-9]/g, ''));
-                    }).slice(0, 10); // Show max 10 results
-                    
-                    if (matches.length > 0) {
-                        autocompleteDropdown.innerHTML = matches.map(v => `
-                            <div class="autocomplete-item" data-reg="${v.reg}">
-                                <div class="reg-number">${v.reg}</div>
-                                <div class="owner-name">${v.ownerName}</div>
-                                <div class="fuel-type">${v.fuelType} · ${v.vehicleType}</div>
-                            </div>
-                        `).join('');
-                        autocompleteDropdown.classList.add('visible');
-                    } else {
-                        autocompleteDropdown.classList.remove('visible');
-                    }
+                debounceTimer = setTimeout(async () => {
+                    // For now, we'll just check if the vehicle exists when user presses fetch
+                    // Autocomplete is disabled for database lookup to avoid too many API calls
+                    autocompleteDropdown.classList.remove('visible');
                 }, 300);
             });
 
-            // Handle autocomplete selection
-            autocompleteDropdown.addEventListener('click', function(e) {
-                const item = e.target.closest('.autocomplete-item');
-                if (item) {
-                    const reg = item.dataset.reg;
-                    vehicleInput.value = reg;
-                    autocompleteDropdown.classList.remove('visible');
+            // Helper to update status badges
+            function updateStatusBadge(elementId, status) {
+                const el = getEl(elementId);
+                if (!el) return;
+                
+                const normStatus = (status || 'N/A').toUpperCase();
+                let className = 'status-badge ';
+                let text = normStatus;
+                
+                if (normStatus === 'VALID') {
+                    className += 'status-valid';
+                    text = '✓ Valid';
+                } else if (normStatus === 'EXPIRED') {
+                    className += 'status-expired';
+                    text = '✗ Expired';
+                } else {
+                    className += 'status-na';
+                    text = 'N/A';
+                }
+                
+                el.className = className;
+                el.textContent = text;
+            }
+
+            // Handle fetch button click
+            getEl('btnFetchDetails').addEventListener('click', async function() {
+                const vehicleNo = vehicleInput.value.trim().toUpperCase();
+                
+                if (!vehicleNo) {
+                    alert('Please enter a vehicle number');
+                    return;
+                }
+                
+                // Disable button while fetching
+                this.disabled = true;
+                this.textContent = 'Fetching...';
+                
+                try {
+                    const vehicle = await fetchVehicleFromDatabase(vehicleNo);
                     
-                    // Directly populate vehicle data
-                    if (window.VehicleData && VehicleData.VEHICLES) {
-                        const normReg = reg.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                        for (let i = 0; i < VehicleData.VEHICLES.length; i++) {
-                            const v = VehicleData.VEHICLES[i];
-                            const vnNorm = (v.reg || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                            if (vnNorm === normReg) {
-                                // Populate vehicle details
-                                getEl('pv_vehicleNo').textContent = v.reg || '';
-                                getEl('pv_ownerName').textContent = v.ownerName || '';
-                                getEl('pv_regDate').textContent = v.registrationDateDMY || '';
-                                getEl('pv_fuelType').textContent = v.fuelType || '';
-                                getEl('pv_vehicleType').textContent = v.vehicleType || '';
-                                getEl('pv_engine').textContent = v.engineNo || '';
-                                getEl('pv_chassis').textContent = v.chassisNo || '';
-                                getEl('pv_makeModel').textContent = (v.vehicleModel || 'N/A');
-                                getEl('pv_seating').textContent = '5'; // Default seating as it's not in data
-                                
-                                console.log('Vehicle details populated:', v.reg);
-                                
-                                // Check for pending challans
-                                const hasPendingChallans = window.VehicleData && window.VehicleData.hasPendingChallans ? window.VehicleData.hasPendingChallans(normReg) : false;
-                                if (hasPendingChallans) {
-                                    const pendingCount = window.VehicleData && window.VehicleData.getPendingChallanCount ? window.VehicleData.getPendingChallanCount(normReg) : 0;
-                                    alert('⚠️ This vehicle has ' + pendingCount + ' pending challan(s). Insurance cannot be issued until all challans are cleared.');
-                                    return;
-                                }
-                                
-                                // Show success toast
-                                var toast = getEl('successToast');
-                                toast.classList.remove('visible');
-                                setTimeout(function() { toast.classList.add('visible'); }, 250);
-                                break;
-                            }
+                    if (vehicle) {
+                        currentVehicle = vehicle;
+                        // Populate vehicle details from database
+                        getEl('pv_vehicleNo').textContent = vehicle.vehicleNo || '';
+                        getEl('pv_ownerName').textContent = vehicle.ownerName || '';
+                        getEl('pv_regDate').textContent = formatDateDDMMYYYY(vehicle.registrationDate) || '';
+                        getEl('pv_fuelType').textContent = vehicle.fuelType || '';
+                        getEl('pv_vehicleType').textContent = vehicle.vehicleType || '';
+                        getEl('pv_engine').textContent = vehicle.engineNumber || '';
+                        getEl('pv_chassis').textContent = vehicle.chassisNumber || '';
+                        getEl('pv_makeModel').textContent = (vehicle.make && vehicle.model) ? (vehicle.make + ' / ' + vehicle.model) : 'N/A';
+                        getEl('pv_seating').textContent = vehicle.seatingCapacity || 'N/A';
+                        
+                        // Update status badges
+                        updateStatusBadge('pv_insStatus', vehicle.insuranceStatus);
+                        updateStatusBadge('pv_pucStatus', vehicle.pucStatus);
+                        
+                        console.log('Vehicle details fetched from database:', vehicle.vehicleNo);
+                        
+                        // Check for pending challans (from the database) before allowing insurance issuance
+                        const pending = await fetchPendingChallanSummary(vehicleNo);
+                        if (pending.count > 0) {
+                            showBlockModal(vehicleNo, pending.count, pending.totalFine);
+                            return;
                         }
+                        
+                        // Auto-fill IDV (default) and compute the premium so the amount shows automatically
+                        if (!getEl('f_idv').value) {
+                            getEl('f_idv').value = 450000;
+                        }
+                        getEl('f_premium').value = calculatePremium();
+                        
+                        // Show success toast
+                        var toast = getEl('successToast');
+                        toast.classList.remove('visible');
+                        setTimeout(function() { toast.classList.add('visible'); }, 250);
+                    } else {
+                        alert('Vehicle not found in database. Please check the vehicle number.');
                     }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error fetching vehicle details. Please try again.');
+                } finally {
+                    // Re-enable button
+                    this.disabled = false;
+                    this.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Fetch Details';
                 }
             });
 
@@ -1921,67 +2184,123 @@
                 }
             });
 
-            // Fetch Details button
-            getEl('btnFetchDetails').addEventListener('click', function() {
-                const vin = getEl('f_vehicleNo').value.trim();
-                if (!vin) {
-                    alert('Please enter Vehicle Number');
-                    return;
-                }
-                
-                // Check if VehicleData is loaded
-                if (!window.VehicleData || !VehicleData.VEHICLES) {
-                    alert('Vehicle database not loaded. Please ensure data.js is included.');
-                    console.error('VehicleData not available:', window.VehicleData);
-                    return;
-                }
-                
-                // Normalize vehicle number for consistent matching
-                const normVin = vin.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                console.log('Insurance check for vehicle:', vin, '-> Normalized:', normVin);
-                console.log('Total vehicles in database:', VehicleData.VEHICLES.length);
-                
-                // First, try to find vehicle in demo data
-                let vehicleFound = false;
-                for (let i = 0; i < VehicleData.VEHICLES.length; i++) {
-                    const v = VehicleData.VEHICLES[i];
-                    const vnNorm = (v.reg || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                    if (vnNorm === normVin) {
-                        // Found vehicle - populate fields
-                        getEl('pv_ownerName').textContent = v.ownerName || '';
-                        getEl('pv_regDate').textContent = v.registrationDateDMY || '';
-                        getEl('pv_fuelType').textContent = v.fuelType || '';
-                        getEl('pv_vehicleType').textContent = v.vehicleType || '';
-                        getEl('pv_engine').textContent = v.engineNo || '';
-                        getEl('pv_chassis').textContent = v.chassisNo || '';
-                        vehicleFound = true;
-                        console.log('Vehicle found:', v.reg, 'Owner:', v.ownerName);
+            // Auto-generate policy number
+            function generatePolicyNumber() {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const random = String(Math.floor(1000 + Math.random() * 9000));
+                const provider = getEl('f_provider').value.split(' ')[0].toUpperCase().substring(0, 3);
+                return provider + year + month + day + random;
+            }
+
+            // Calculate premium based on IDV, policy type, and duration
+            function calculatePremium() {
+                const idv = parseFloat(getEl('f_idv').value) || 0;
+                const policyType = getEl('f_policyType').value;
+                const duration = parseInt(getEl('f_duration').value) || 1;
+
+                if (idv === 0) return 0;
+
+                // Base rates as percentage of IDV
+                let baseRate = 0;
+                switch(policyType) {
+                    case 'Comprehensive':
+                        baseRate = 0.03; // 3% of IDV
                         break;
-                    }
+                    case 'Comprehensive (Zero Dep)':
+                        baseRate = 0.035; // 3.5% of IDV
+                        break;
+                    case 'Third Party Only':
+                        baseRate = 0.008; // 0.8% of IDV (minimum)
+                        break;
+                    case 'Own Damage Only':
+                        baseRate = 0.025; // 2.5% of IDV
+                        break;
+                    case 'Package Policy':
+                        baseRate = 0.032; // 3.2% of IDV
+                        break;
+                    default:
+                        baseRate = 0.03;
                 }
+
+                // Duration multiplier
+                const durationMultiplier = duration; // 1 year = 1x, 2 years = 2x, etc.
+
+                // Calculate premium
+                let premium = idv * baseRate * durationMultiplier;
+
+                // Add GST (18%)
+                const gst = premium * 0.18;
+                const totalPremium = premium + gst;
+
+                return Math.round(totalPremium);
+            }
+
+            // Update end date based on duration
+            function updateEndDate() {
+                const duration = parseInt(getEl('f_duration').value) || 1;
+                const startDate = new Date();
+                startDate.setFullYear(startDate.getFullYear() + duration);
                 
-                if (!vehicleFound) {
-                    console.log('Available vehicles (first 5):', VehicleData.VEHICLES.slice(0, 5).map(v => v.reg));
-                    alert('Vehicle not found in database. Please check the vehicle number and try again.\n\nTip: Open demo-data.html to see available vehicle numbers.');
-                    return;
-                }
+                const yyyy = startDate.getFullYear();
+                const mm = String(startDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(startDate.getDate()).padStart(2, '0');
                 
-                // Check for pending challans
-                const hasPendingChallans = window.VehicleData && window.VehicleData.hasPendingChallans ? window.VehicleData.hasPendingChallans(normVin) : false;
-                if (hasPendingChallans) {
-                    const pendingCount = window.VehicleData && window.VehicleData.getPendingChallanCount ? window.VehicleData.getPendingChallanCount(normVin) : 0;
-                    alert('⚠️ This vehicle has ' + pendingCount + ' pending challan(s). Insurance cannot be issued until all challans are cleared.');
-                    return;
-                }
-                
-                var toast = getEl('successToast');
-                toast.classList.remove('visible');
-                setTimeout(function() { toast.classList.add('visible'); }, 250);
+                getEl('f_endDate').value = yyyy + '-' + mm + '-' + dd;
+            }
+
+            // Initialize on page load
+            getEl('f_policyNo').value = generatePolicyNumber();
+            getEl('f_startDate').value = new Date().toISOString().split('T')[0];
+            updateEndDate();
+
+            // Add event listeners for auto-calculation
+            getEl('f_idv').addEventListener('input', function() {
+                getEl('f_premium').value = calculatePremium();
+            });
+
+            getEl('f_policyType').addEventListener('change', function() {
+                getEl('f_premium').value = calculatePremium();
+            });
+
+            getEl('f_duration').addEventListener('change', function() {
+                getEl('f_premium').value = calculatePremium();
+                updateEndDate();
+            });
+
+            getEl('f_provider').addEventListener('change', function() {
+                getEl('f_policyNo').value = generatePolicyNumber();
             });
 
             // Reset button
             getEl('btnReset').addEventListener('click', function() {
+                currentVehicle = null;
+                // Clear search input
                 getEl('f_vehicleNo').value = '';
+                
+                // Clear vehicle details display
+                const vehicleFields = [
+                    'pv_vehicleNo', 'pv_ownerName', 'pv_regDate', 'pv_fuelType', 
+                    'pv_vehicleType', 'pv_engine', 'pv_chassis', 'pv_makeModel', 'pv_seating'
+                ];
+                vehicleFields.forEach(id => {
+                    const el = getEl(id);
+                    if (el) el.textContent = '';
+                });
+                
+                // Clear status badges
+                const statusFields = ['pv_insStatus', 'pv_pucStatus'];
+                statusFields.forEach(id => {
+                    const el = getEl(id);
+                    if (el) {
+                        el.textContent = '';
+                        el.className = '';
+                    }
+                });
+
+                // Clear insurance form
                 getEl('f_policyNo').value = '';
                 getEl('f_idv').value = '';
                 getEl('f_premium').value = '';
@@ -1989,6 +2308,7 @@
                 getEl('f_endDate').value = '';
                 getEl('f_provider').selectedIndex = 0;
                 getEl('f_policyType').selectedIndex = 0;
+                
                 getEl('successToast').classList.remove('visible');
                 getEl('insReceiptPanel').classList.remove('visible');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1999,15 +2319,57 @@
                 getEl('insReceiptPanel').classList.remove('visible');
             });
 
+            // Download Receipt as standalone HTML (Open -> Print -> Save as PDF)
+            function downloadReceiptAsHtml() {
+                const receiptHtml = getEl('motorReceipt').outerHTML;
+                const pageStyles = Array.from(document.querySelectorAll('style'))
+                    .map(st => st.innerHTML)
+                    .join('\n');
+                
+                const safeReg = (getEl('mr_regNo').textContent || 'Receipt').replace(/[^a-z0-9]/gi, '_');
+                
+                const standaloneHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Insurance_Receipt_${safeReg}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 20px; background: #f1f5f9; display: flex; justify-content: center; }
+        ${pageStyles}
+        .motor-receipt { box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        @media print {
+            body { padding: 0; background: #fff; }
+            .motor-receipt { box-shadow: none; border: none; }
+        }
+    </style>
+</head>
+<body>
+    ${receiptHtml}
+</body>
+</html>`;
+
+                const blob = new Blob(['\ufeff', standaloneHtml], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Insurance_Receipt_' + safeReg + '.html';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('✅ Receipt saved as ' + a.download + '.\n\nTo get a PDF:\n1. Open the downloaded file\n2. Press Ctrl+P (Print)\n3. Select "Save as PDF"');
+            }
+
             // Print button
             getEl('btnPrintReceipt').addEventListener('click', function() {
                 window.print();
             });
 
-            // Download PDF (browser -> opens print dialog that user can save as PDF)
+            // Download PDF button
             getEl('btnDownloadPdf').addEventListener('click', function() {
-                alert('Tip: In the Print dialog that opens, choose "Save as PDF" in the destination list to download the receipt.');
-                setTimeout(function() { window.print(); }, 300);
+                downloadReceiptAsHtml();
             });
 
             // Email button
@@ -2026,7 +2388,7 @@
             });
 
             // Generate button
-            getEl('btnGenerate').addEventListener('click', function() {
+            getEl('btnGenerate').addEventListener('click', async function() {
                 const requiredFields = [
                     { id: 'f_vehicleNo', name: 'Vehicle Number' },
                     { id: 'f_policyNo', name: 'Policy Number' },
@@ -2047,15 +2409,25 @@
                 }
 
                 // ===== Populate Receipt data =====
-                // Today = 18/05/2025 as per reference
-                getEl('mr_receiptDate').textContent = '18/05/2025';
+                const today = new Date();
+                getEl('mr_receiptDate').textContent =
+                    String(today.getDate()).padStart(2, '0') + '/' +
+                    String(today.getMonth() + 1).padStart(2, '0') + '/' +
+                    today.getFullYear();
 
-                // Owner details
-                const ownerName = (getEl('pv_ownerName').textContent || 'ARJUN KAPOOR').toUpperCase();
-                getEl('mr_holderName').textContent = 'MR. ' + ownerName;
+                const v = currentVehicle || {};
+
+                // Owner details (from the fetched vehicle record; unavailable fields shown as NA)
+                const ownerName = (v.ownerName || getEl('pv_ownerName').textContent || '').trim().toUpperCase();
+                getEl('mr_holderName').textContent = ownerName || 'NA';
+                getEl('mr_holderPhone').textContent = v.ownerMobile || 'NA';
+                getEl('mr_holderEmail').textContent = (v.ownerEmail || 'NA').toUpperCase();
+                getEl('mr_holderAddr').textContent = 'NA';
+                getEl('mr_hypo').textContent = 'NA';
+                getEl('mr_hypoType').textContent = 'NA';
 
                 // Vehicle
-                const vNo = getEl('pv_vehicleNo').textContent || 'MH12AB1234';
+                const vNo = getEl('pv_vehicleNo').textContent || '';
                 // Format vehicle no as MH-04 KL-5521 style (state-number space alpha-number)
                 let formattedVNo = vNo.toUpperCase().replace(/\s+/g,'');
                 if (/^[A-Z]{2}\d{2}[A-Z]{1,2}\d{3,4}$/.test(formattedVNo)) {
@@ -2068,21 +2440,43 @@
                         formattedVNo = m1 + '-' + m2 + ' ' + alphaPart[0] + '-' + numPart[0];
                     }
                 }
-                getEl('mr_regNo').textContent = formattedVNo;
-                getEl('mr_makeModel2').textContent = (getEl('pv_makeModel').textContent || 'MARUTI SUZUKI SWIFT VXI').toUpperCase();
-                getEl('mr_fuel2').textContent = (getEl('pv_fuelType').textContent || 'PETROL').toUpperCase();
-                getEl('mr_chassis2').textContent = getEl('pv_chassis').textContent || 'MA3EK81SXXXXXXXX';
-                getEl('mr_engine2').textContent = getEl('pv_engine').textContent || 'E81SXXXXXXXXXXXX';
-                const seating = (getEl('pv_seating').textContent || '5');
-                getEl('mr_seatCap').textContent = seating + ' (INCLUDING DRIVER)';
+                getEl('mr_regNo').textContent = formattedVNo || 'NA';
+                getEl('mr_makeModel2').textContent = (getEl('pv_makeModel').textContent || 'NA').toUpperCase();
+                getEl('mr_fuel2').textContent = (getEl('pv_fuelType').textContent || 'NA').toUpperCase();
+                getEl('mr_chassis2').textContent = getEl('pv_chassis').textContent || 'NA';
+                getEl('mr_engine2').textContent = getEl('pv_engine').textContent || 'NA';
+                const seating = (getEl('pv_seating').textContent || '').trim();
+                getEl('mr_seatCap').textContent = seating ? seating + ' (INCLUDING DRIVER)' : 'NA';
                 const regDate = getEl('pv_regDate').textContent || '';
                 const yrMatch = regDate.match(/(19|20)\d{2}/);
-                getEl('mr_yrManf').textContent = yrMatch ? yrMatch[0] : '2024';
+                getEl('mr_yrManf').textContent = yrMatch ? yrMatch[0] : 'NA';
 
-                // Policy info
-                getEl('mr_policyNo').textContent = getEl('f_policyNo').value || 'DRN250518000123';
+                // Body type, cubic capacity, weights and nominee details are not stored in the database
+                getEl('mr_bodyType').textContent = 'NA';
+                getEl('mr_cc').textContent = 'NA';
+                getEl('mr_unladen').textContent = 'NA';
+                getEl('mr_gvw').textContent = 'NA';
+                getEl('mr_nomName').textContent = 'NA';
+                getEl('mr_nomAge').textContent = 'NA';
+                getEl('mr_nomRel').textContent = 'NA';
+                getEl('mr_nomAppointee').textContent = 'NA';
+                getEl('mr_nomAppRel').textContent = 'NA';
+
+                // Policy info — category derived from the fetched vehicle type (not always a car)
+                getEl('mr_policyNo').textContent = getEl('f_policyNo').value || 'NA';
+                const vehType = (getEl('pv_vehicleType').textContent || '').toLowerCase();
+                let vehCategory = 'Motor Vehicle';
+                if (/two\s*wheeler|motorcycle|scooter|bike|moped|2w/.test(vehType)) {
+                    vehCategory = 'Two Wheeler';
+                } else if (/three\s*wheeler|rickshaw|3w/.test(vehType)) {
+                    vehCategory = 'Three Wheeler';
+                } else if (/truck|bus|hmv|goods|lorry|commercial|cargo/.test(vehType)) {
+                    vehCategory = 'Heavy Motor Vehicle';
+                } else if (/car|jeep|taxi|private/.test(vehType)) {
+                    vehCategory = 'Private Car';
+                }
                 const pt = getEl('f_policyType').value || 'Comprehensive';
-                getEl('mr_policyType').innerHTML = 'Private Car - ' + pt + '<br>Insurance Policy';
+                getEl('mr_policyType').innerHTML = vehCategory + ' - ' + pt + '<br>Insurance Policy';
 
                 // Dates — single line with "00:00 Hrs" / "23:59 Hrs" suffix as per reference
                 const sDate = getEl('f_startDate').value;
@@ -2091,11 +2485,9 @@
                 getEl('mr_endDate').textContent = formatDateDDMMYYYY(eDate) + ' 23:59 Hrs';
 
                 // Premium calculation
-                const userPremium = Number(getEl('f_premium').value) || 12678;
-                const idvVal = Number(getEl('f_idv').value) || 450000;
+                const userPremium = Number(getEl('f_premium').value) || 0;
 
                 const ncbPct = 20;
-                const SAMPLE_USER = 12678;
                 const SAMPLE_OD_BASIC = 16200, SAMPLE_ADDON = 2500;
                 const SAMPLE_DEDUCTIBLE = 2000, SAMPLE_NCB = 3740;
                 const SAMPLE_OD_NET = 16960, SAMPLE_TP = 6150;
@@ -2103,7 +2495,8 @@
                 const SAMPLE_TOTAL_PRE = 27271, SAMPLE_NCB_DISCOUNT = 2368;
                 const SAMPLE_TOTAL_PAID = 26903;
 
-                const ratio = userPremium / SAMPLE_USER;
+                // Scale the standard proportions so TOTAL AMOUNT PAID equals the entered premium
+                const ratio = SAMPLE_TOTAL_PAID > 0 ? (userPremium / SAMPLE_TOTAL_PAID) : 0;
                 const rnd = function(x) { return Math.round(x); };
 
                 const odBasic = rnd(SAMPLE_OD_BASIC * ratio);
@@ -2178,6 +2571,69 @@
 
                 getEl('mr_rupeesWords').textContent = numberToWordsIndian(totalPaid);
 
+                // Persist the issued policy to the database before showing the receipt
+                const authUser = (function() {
+                    try {
+                        const raw = localStorage.getItem('vehical_auth_data');
+                        return raw ? (JSON.parse(raw).user || null) : null;
+                    } catch (e) { return null; }
+                })();
+
+                const policyPayload = {
+                    policyNumber: getEl('f_policyNo').value,
+                    vehicleNo: v.vehicleNo || getEl('f_vehicleNo').value,
+                    ownerName: v.ownerName || '',
+                    ownerMobile: v.ownerMobile || '',
+                    ownerEmail: v.ownerEmail || '',
+                    vehicleType: v.vehicleType || '',
+                    makeModel: (v.make && v.model) ? (v.make + ' ' + v.model) : '',
+                    fuelType: v.fuelType || '',
+                    engineNumber: v.engineNumber || '',
+                    chassisNumber: v.chassisNumber || '',
+                    policyCategory: vehCategory,
+                    policyType: pt,
+                    idv: getEl('f_idv').value,
+                    premium: userPremium,
+                    startDate: sDate,
+                    endDate: eDate,
+                    issuedByUserId: authUser ? (authUser.id || '') : '',
+                    issuedByName: authUser ? (authUser.fullName || '') : ''
+                };
+
+                const generateBtn = this;
+                generateBtn.disabled = true;
+                const originalBtnHtml = generateBtn.innerHTML;
+                generateBtn.textContent = 'Issuing...';
+
+                try {
+                    const response = await fetch('/api/insurance/policy', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(policyPayload)
+                    });
+                    const result = await response.json();
+
+                    if (!result.success) {
+                        if (result.data && result.data.blocked) {
+                            showBlockModal(
+                                policyPayload.vehicleNo,
+                                result.data.pendingChallanCount,
+                                result.data.pendingFineAmount
+                            );
+                        } else {
+                            alert('Failed to issue policy: ' + (result.message || 'Unknown error'));
+                        }
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error saving policy:', error);
+                    alert('Could not save the policy to the database. Please try again.');
+                    return;
+                } finally {
+                    generateBtn.disabled = false;
+                    generateBtn.innerHTML = originalBtnHtml;
+                }
+
                 // Show receipt and scroll
                 const panel = getEl('insReceiptPanel');
                 panel.classList.add('visible');
@@ -2186,10 +2642,23 @@
                 }, 150);
             });
 
+            function showBlockModal(vehicleNo, count, fine) {
+                getEl('blockModalVehicleNo').textContent = vehicleNo;
+                getEl('blockModalChallanCount').textContent = count + ' Challan(s)';
+                getEl('blockModalFineAmount').textContent = '₹ ' + new Intl.NumberFormat('en-IN').format(fine);
+                getEl('blockModalMsg').textContent = 'This vehicle has pending traffic challans. Insurance issuance or renewal is strictly prohibited until all penalties are cleared in the system.';
+                getEl('blockModal').classList.add('active');
+            }
+
             // Dashboard breadcrumb link
             getEl('crumbDashboard').addEventListener('click', function(e) {
                 e.preventDefault();
                 window.location.href = 'insurance-dashboard.html';
+            });
+
+            getEl('btnCloseBlockModal').addEventListener('click', function() {
+                getEl('blockModal').classList.remove('active');
+                window.location.reload();
             });
         });
     </script>

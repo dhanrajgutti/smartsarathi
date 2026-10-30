@@ -281,9 +281,14 @@ public class AdminDAO {
         
         try {
             conn = DatabaseConfig.getConnection();
-            String sql = "SELECT challan_id, challan_number, vehicle_no, officer_id, violation_ids, total_fine_amount, " +
-                         "TO_CHAR(challan_date, 'YYYY-MM-DD') as challan_date, location, status, payment_status " +
-                         "FROM challan ORDER BY challan_date DESC";
+            String sql = "SELECT c.challan_id, c.challan_number, c.vehicle_no, c.officer_id, c.violation_ids, c.total_fine_amount, " +
+                         "TO_CHAR(c.challan_date, 'YYYY-MM-DD') as challan_date, c.challan_time, c.location, c.status, c.payment_status, " +
+                         "o.owner_name, vm.violation_name " +
+                         "FROM challan c " +
+                         "LEFT JOIN vehicle v ON UPPER(REPLACE(REPLACE(c.vehicle_no, ' ', ''), '-', '')) = UPPER(REPLACE(REPLACE(v.vehicle_no, ' ', ''), '-', '')) " +
+                         "LEFT JOIN owner o ON v.owner_id = o.owner_id " +
+                         "LEFT JOIN violation_master vm ON TO_CHAR(vm.violation_id) = c.violation_ids " +
+                         "ORDER BY c.challan_date DESC, c.challan_time DESC";
             pstmt = conn.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
@@ -296,9 +301,12 @@ public class AdminDAO {
                 challan.put("violationIds", rs.getString("violation_ids"));
                 challan.put("totalFineAmount", rs.getInt("total_fine_amount"));
                 challan.put("challanDate", rs.getString("challan_date"));
+                challan.put("challanTime", rs.getString("challan_time"));
                 challan.put("location", rs.getString("location"));
                 challan.put("status", rs.getString("status"));
                 challan.put("paymentStatus", rs.getString("payment_status"));
+                challan.put("ownerName", rs.getString("owner_name"));
+                challan.put("violationName", rs.getString("violation_name"));
                 challans.add(challan);
             }
         } catch (SQLException e) {

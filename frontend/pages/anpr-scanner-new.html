@@ -637,17 +637,19 @@
                         <div class="option-card-desc">Use device camera</div>
                     </div>
                     
-                    <div class="option-card" onclick="showVideoOption()">
-                        <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
-                        <div class="option-card-title">Record Video</div>
-                        <div class="option-card-desc">Capture video evidence</div>
-                    </div>
-                    
                     <div class="option-card" onclick="showUploadOption()">
                         <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
                         <div class="option-card-title">Upload from Gallery</div>
                         <div class="option-card-desc">Select from device</div>
                     </div>
+                    <input type="file" id="galleryInput" accept="image/*" style="display: none;" onchange="handleGalleryUpload(event)">
+                </div>
+
+                <div class="action-buttons" style="margin-top: 30px;">
+                    <button class="btn btn-outline" onclick="window.location.href='police-dashboard.html'" style="width: 100%;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; margin-right: 8px;"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                        Back to Dashboard
+                    </button>
                 </div>
             </div>
 
@@ -822,8 +824,10 @@
                 </div>
                 
                 <div class="input-group">
-                    <label>Violation Location *</label>
-                    <input type="text" class="input-field" id="violationLocation" placeholder="Enter location">
+                    <label>Violation Location * <span style="font-size:11px;color:#64748b;font-weight:400;">(Live GPS)</span></label>
+                    <input type="text" class="input-field" id="violationLocation" placeholder="Acquiring live location…" readonly>
+                    <div id="locationStatus" style="font-size:12px;color:#64748b;margin-top:6px;">Acquiring live location…</div>
+                    <button type="button" class="btn btn-outline" id="btnRetryLocation" style="margin-top:8px;display:none;" onclick="captureLiveLocation()">Retry Location</button>
                 </div>
                 
                 <div class="input-group">
@@ -933,16 +937,7 @@
                 </div>
                 
                 <div class="action-buttons">
-                    <button class="btn btn-outline" onclick="downloadPDF()">
-                        Download PDF
-                    </button>
-                    <button class="btn btn-outline" onclick="shareChallan()">
-                        Share
-                    </button>
-                </div>
-                
-                <div class="action-buttons">
-                    <button class="btn btn-primary" onclick="window.location.href='police-dashboard.html'" style="width: 100%;">
+                    <button class="btn btn-primary" onclick="resetAnprFlow()" style="width: 100%;">
                         Done
                     </button>
                 </div>
@@ -977,6 +972,12 @@
         function navigateTo(screenNum) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('screen-' + screenNum).classList.add('active');
+
+            // Capture live location the moment the officer reaches the violation screen
+            if (screenNum === 7) {
+                const locInput = document.getElementById('violationLocation');
+                if (locInput && !locInput.value) captureLiveLocation();
+            }
             
             // Update step indicator
             for (let i = 1; i <= 4; i++) {
@@ -990,6 +991,47 @@
                     }
                 }
             }
+        }
+
+        // Capture the officer's live GPS position and lock it into the Violation Location field
+        function captureLiveLocation() {
+            const input = document.getElementById('violationLocation');
+            const status = document.getElementById('locationStatus');
+            const retry = document.getElementById('btnRetryLocation');
+            if (!input) return;
+
+            if (retry) retry.style.display = 'none';
+            input.value = '';
+            if (status) { status.style.color = '#64748b'; status.textContent = 'Acquiring live location…'; }
+
+            const onSuccess = (pos) => {
+                const lat = pos.coords.latitude.toFixed(6);
+                const lon = pos.coords.longitude.toFixed(6);
+                input.value = lat + '° N, ' + lon + '° E';
+                if (status) {
+                    status.style.color = '#16a34a';
+                    status.textContent = 'Live location captured (accuracy ±' + Math.round(pos.coords.accuracy) + ' m)';
+                }
+            };
+            const onError = (err) => {
+                if (status) {
+                    status.style.color = '#dc2626';
+                    status.textContent = 'Unable to fetch live location'
+                        + (err && err.message ? ' (' + err.message + ')' : '')
+                        + '. Enable location access and retry.';
+                }
+                if (retry) retry.style.display = 'inline-block';
+            };
+
+            if (!navigator.geolocation) {
+                onError({ message: 'Geolocation not supported by this browser' });
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            });
         }
 
         async function startCamera() {
@@ -1073,12 +1115,23 @@
             fetchVehicleData();
         }
 
-        function showVideoOption() {
-            alert('Video recording feature coming soon!');
+        function handleGalleryUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                capturedPhoto = e.target.result;
+                document.getElementById('capturedImage').src = capturedPhoto;
+                document.getElementById('capturedImage').style.display = 'block';
+                document.getElementById('capturedPlaceholder').style.display = 'none';
+                navigateTo(3);
+            };
+            reader.readAsDataURL(file);
         }
 
         function showUploadOption() {
-            alert('Gallery upload feature coming soon!');
+            document.getElementById('galleryInput').click();
         }
 
         async function fetchVehicleData() {
@@ -1164,7 +1217,7 @@
             
             const location = document.getElementById('violationLocation').value;
             if (!location) {
-                alert('Please enter violation location');
+                alert('Live location not captured. Please enable location access and use Retry Location before issuing the challan.');
                 return;
             }
 
@@ -1236,12 +1289,43 @@
             }
         }
 
-        function downloadPDF() {
-            alert('PDF download feature coming soon!');
-        }
+        // After the challan is issued, return to the ANPR scanner start for the next vehicle
+        function resetAnprFlow() {
+            stopCamera();
+            capturedPhoto = null;
+            vehicleData = null;
 
-        function shareChallan() {
-            alert('Share feature coming soon!');
+            // Evidence previews
+            const capturedImage = document.getElementById('capturedImage');
+            if (capturedImage) { capturedImage.removeAttribute('src'); capturedImage.style.display = 'none'; }
+            const capturedPlaceholder = document.getElementById('capturedPlaceholder');
+            if (capturedPlaceholder) capturedPlaceholder.style.display = '';
+            const reviewImage = document.getElementById('reviewImage');
+            if (reviewImage) { reviewImage.removeAttribute('src'); reviewImage.style.display = 'none'; }
+            const reviewPlaceholder = document.getElementById('reviewPlaceholder');
+            if (reviewPlaceholder) reviewPlaceholder.style.display = '';
+
+            // Vehicle + violation fields back to defaults
+            const manualInput = document.getElementById('manualInput');
+            if (manualInput) manualInput.value = '';
+            const violationSelect = document.getElementById('violationSelect');
+            if (violationSelect) violationSelect.selectedIndex = 0;
+            const violationCode = document.getElementById('violationCode');
+            if (violationCode) violationCode.value = 'V001';
+            const fineAmount = document.getElementById('fineAmount');
+            if (fineAmount) fineAmount.value = '1,000';
+            const remarks = document.getElementById('remarks');
+            if (remarks) remarks.value = '';
+
+            // Reset the live-location field so the next scan captures a fresh fix
+            const locInput = document.getElementById('violationLocation');
+            if (locInput) locInput.value = '';
+            const locStatus = document.getElementById('locationStatus');
+            if (locStatus) { locStatus.style.color = '#64748b'; locStatus.textContent = 'Acquiring live location…'; }
+            const retry = document.getElementById('btnRetryLocation');
+            if (retry) retry.style.display = 'none';
+
+            navigateTo(1);
         }
     </script>
 </body>

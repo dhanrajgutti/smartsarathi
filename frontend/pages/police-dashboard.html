@@ -6,6 +6,62 @@
     <title>Police Dashboard - Smart Saarthi</title>
     <link rel="stylesheet" href="../css/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .mobile-actions {
+            display: none;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .mobile-action-card {
+            background: #ffffff;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .mobile-action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            border-color: #0F4C81;
+        }
+
+        .mobile-action-icon {
+            width: 48px;
+            height: 48px;
+            background: #EFF6FF;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0F4C81;
+        }
+
+        .mobile-action-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .mobile-action-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0F172A;
+        }
+
+        @media (max-width: 767px) {
+            .mobile-actions {
+                display: grid;
+            }
+        }
+    </style>
 </head>
 <body>
     <main class="layout">
@@ -55,6 +111,22 @@
                 <div class="stat-label">Total Fine (Today)</div>
                 <div class="stat-trend up">▲ 15.7% from yesterday</div>
             </div>
+        </section>
+
+        <!-- Mobile Action Buttons -->
+        <section class="mobile-actions">
+            <a href="anpr-scanner-new.html" class="mobile-action-card">
+                <div class="mobile-action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </div>
+                <div class="mobile-action-label">Issue Challan</div>
+            </a>
+            <a href="challan-history.html" class="mobile-action-card">
+                <div class="mobile-action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <div class="mobile-action-label">Challan History</div>
+            </a>
         </section>
     </main>
 

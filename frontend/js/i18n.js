@@ -35,20 +35,14 @@ const translations = {
         insurance: "Insurance Agency",
         
         // Services
-        vehicleReg: "Vehicle Registration",
-        vehicleRegDesc: "Book new registration / Transfer of ownership",
-        drivingLicense: "Driving License",
-        dlDesc: "Apply for learner / permanent license",
-        conductorLicense: "Conductor License",
-        clDesc: "Apply for conductor license",
-        permit: "Permit",
-        permitDesc: "Apply for vehicle permit",
-        challanPayment: "Challan Payment",
-        challanDesc: "Pay traffic challan online",
-        rtoAppointment: "RTO Appointment",
-        rtoDesc: "Book RTO service slot",
-        otherServices: "Other Services",
-        otherDesc: "Duplicate, Reprint, Surrender etc.",
+        pucRenewal: "PUC Renewal",
+        pucRenewalDesc: "Renew Pollution Under Control certificate",
+        insuranceRenewal: "Insurance Renewal",
+        insuranceRenewalDesc: "Renew your vehicle insurance policy",
+        payChallan: "Pay Challan",
+        payChallanDesc: "Pay traffic challan online",
+        checkChallan: "Check Challan",
+        checkChallanDesc: "View pending traffic challans",
         
         // Quick Links
         registerVehicle: "Register New Vehicle",
@@ -101,20 +95,14 @@ const translations = {
         insurance: "विमा कंपनी",
         
         // Services
-        vehicleReg: "वाहन नोंदणी",
-        vehicleRegDesc: "नवीन नोंदणी बुक करा / मालकी हस्तांतरण",
-        drivingLicense: "ड्रायव्हिंग लायसन्स",
-        dlDesc: "शिकारू / कायम लायसन्ससाठी अर्ज करा",
-        conductorLicense: "कंडक्टर लायसन्स",
-        clDesc: "कंडक्टर लायसन्ससाठी अर्ज करा",
-        permit: "परमिट",
-        permitDesc: "वाहन परमिटसाठी अर्ज करा",
-        challanPayment: "चलन भरण",
-        challanDesc: "ऑनलाइन वाहतवीक चलन भरा",
-        rtoAppointment: "आरटीओ अपॉइंटमेंट",
-        rtoDesc: "आरटीओ सेवा स्लॉट बुक करा",
-        otherServices: "इतर सेवा",
-        otherDesc: "डुप्लिकेट, पुन्ःमुद्रण, सोपण इत्यादी",
+        pucRenewal: "पीयूसी नवीनीकरण",
+        pucRenewalDesc: "प्रदूषण नियंत्रण प्रमाणपत्र नवीन करा",
+        insuranceRenewal: "विमा नवीनीकरण",
+        insuranceRenewalDesc: "वाहन विमा धोरण नवीन करा",
+        payChallan: "चलन भरा",
+        payChallanDesc: "ऑनलाइन वाहतवीक चलन भरा",
+        checkChallan: "चलन तपासा",
+        checkChallanDesc: "उल्लेखित वाहतवीक चलन पहा",
         
         // Quick Links
         registerVehicle: "नवीन वाहन नोंदणी करा",
@@ -196,7 +184,7 @@ function updatePageLanguage() {
     const serviceDescs = document.querySelectorAll('.service-desc');
     
     if (serviceCards.length > 0) {
-        const serviceKeys = ['vehicleReg', 'drivingLicense', 'conductorLicense', 'permit', 'challanPayment', 'rtoAppointment', 'otherServices'];
+        const serviceKeys = ['pucRenewal', 'insuranceRenewal', 'payChallan', 'checkChallan'];
         serviceCards.forEach((card, index) => {
             if (serviceKeys[index]) {
                 card.textContent = t(serviceKeys[index]);
@@ -205,7 +193,7 @@ function updatePageLanguage() {
     }
     
     if (serviceDescs.length > 0) {
-        const descKeys = ['vehicleRegDesc', 'dlDesc', 'clDesc', 'permitDesc', 'challanDesc', 'rtoDesc', 'otherDesc'];
+        const descKeys = ['pucRenewalDesc', 'insuranceRenewalDesc', 'payChallanDesc', 'checkChallanDesc'];
         serviceDescs.forEach((desc, index) => {
             if (descKeys[index]) {
                 desc.textContent = t(descKeys[index]);

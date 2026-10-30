@@ -460,11 +460,11 @@
                 <div class="history-filter-grid">
                     <div class="func-form-group">
                         <label class="func-form-label" for="filterFromDate">From Date</label>
-                        <input id="filterFromDate" type="date" class="func-form-input" value="2025-05-01">
+                        <input id="filterFromDate" type="date" class="func-form-input">
                     </div>
                     <div class="func-form-group">
                         <label class="func-form-label" for="filterToDate">To Date</label>
-                        <input id="filterToDate" type="date" class="func-form-input" value="2025-05-18">
+                        <input id="filterToDate" type="date" class="func-form-input">
                     </div>
                     <div class="func-form-group">
                         <label class="func-form-label" for="filterPolicyNumber">Policy Number</label>
@@ -564,42 +564,49 @@
         </div>
     </div>
 
-    <script src="../js/data.js"></script>
     <script src="../js/dashboard.js"></script>
     <script>
         (function() {
             const PAGE_SIZE = 10;
             const formatter = new Intl.NumberFormat('en-IN');
 
-            function policyTypeFromPlan(plan) {
-                if (!plan) return 'Comprehensive';
-                if (plan.indexOf('Third') > -1) return 'Third Party';
-                return 'Comprehensive';
-            }
-            function pad2(n){ return String(n).padStart(2,'0'); }
-
-            const RAW_POLICY_DATA = (window.VehicleData && VehicleData.POLICY_DATA) || [];
-            const POLICY_DATA = RAW_POLICY_DATA.map(function(p) {
-                const hour = 9 + (p.i % 8);
-                const min  = 15 * (p.i % 4);
-                return {
-                    policyNumber: p.policyNo,
-                    insuredName: p.ownerName,
-                    vehicleNumber: p.vehicleReg,
-                    policyType: policyTypeFromPlan(p.plan),
-                    startDate: p.startDateIso,
-                    endDate: p.endDateIso,
-                    premium: p.totalPremium,
-                    issuedAt: p.issueDateIso + 'T' + pad2(hour) + ':' + pad2(min) + ':00',
-                    status: p.status === 'Renewal Due' ? 'Issued' : p.status
-                };
-            });
+            // Policies are loaded from the database only (no demo data)
+            let POLICY_DATA = [];
 
             const state = {
                 page: 1,
-                filtered: POLICY_DATA.slice(),
+                filtered: [],
                 activePolicy: null
             };
+
+            function mapPolicyRecord(p) {
+                return {
+                    policyNumber: p.policyNumber || '',
+                    insuredName: p.ownerName || 'NA',
+                    vehicleNumber: p.vehicleNo || '',
+                    policyType: p.policyType || 'Comprehensive',
+                    startDate: p.startDate || '',
+                    endDate: p.endDate || '',
+                    premium: Number(p.premium) || 0,
+                    issuedAt: (p.createdAt || '').replace(' ', 'T'),
+                    status: p.status === 'Renewal Due' ? 'Issued' : (p.status || 'Issued')
+                };
+            }
+
+            async function loadPolicies() {
+                try {
+                    const response = await fetch('/api/insurance/history');
+                    const data = await response.json();
+                    if (data.success && Array.isArray(data.data)) {
+                        POLICY_DATA = data.data.map(mapPolicyRecord);
+                    } else {
+                        POLICY_DATA = [];
+                    }
+                } catch (error) {
+                    console.error('Error loading insurance policies:', error);
+                    POLICY_DATA = [];
+                }
+            }
 
             function getEl(id) {
                 return document.getElementById(id);
@@ -607,6 +614,7 @@
 
             function formatDate(value) {
                 const date = new Date(value);
+                if (!value || isNaN(date.getTime())) return 'NA';
                 const day = String(date.getDate()).padStart(2, '0');
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const year = date.getFullYear();
@@ -615,6 +623,7 @@
 
             function formatDateTime(value) {
                 const date = new Date(value);
+                if (!value || isNaN(date.getTime())) return 'NA';
                 const datePart = formatDate(value);
                 const timePart = date.toLocaleTimeString('en-IN', {
                     hour: '2-digit',
@@ -830,9 +839,18 @@
                 URL.revokeObjectURL(url);
             }
 
+            // Default the date range to the span covered by the available policies
+            function applyDefaultDateRange() {
+                if (!POLICY_DATA.length) return;
+                const dates = POLICY_DATA.map(function(policy) {
+                    return policy.issuedAt.slice(0, 10);
+                }).sort();
+                getEl('filterFromDate').value = dates[0];
+                getEl('filterToDate').value = dates[dates.length - 1];
+            }
+
             function resetFilters() {
-                getEl('filterFromDate').value = '2025-05-01';
-                getEl('filterToDate').value = '2025-05-18';
+                applyDefaultDateRange();
                 getEl('filterPolicyNumber').value = '';
                 getEl('filterVehicleNumber').value = '';
                 getEl('filterPolicyType').value = 'All';
@@ -881,8 +899,10 @@
                 });
             }
 
-            function initPage() {
+            async function initPage() {
                 bindEvents();
+                await loadPolicies();
+                applyDefaultDateRange();
                 applyFilters();
             }
 

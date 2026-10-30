@@ -2,11 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Challan History - Police Dashboard</title>
     <link rel="stylesheet" href="../css/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
         .status-badge.paid {
             background: rgba(22, 163, 74, 0.12);
             color: #16A34A;
@@ -24,59 +40,362 @@
         }
         .sum-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
         }
         .sum-card {
             background: #ffffff;
             border: 1px solid #E5E7EB;
-            border-radius: 10px;
-            padding: 12px;
+            border-radius: 12px;
+            padding: 20px;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            text-align: center;
-            gap: 6px;
-            aspect-ratio: 1;
+            gap: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .sum-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
         .sum-ic {
-            width: 36px; height: 36px; border-radius: 10px;
+            width: 48px; height: 48px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
         }
-        .sum-ic svg { width: 18px; height: 18px; stroke-width: 2; fill: none; stroke: currentColor; }
+        .sum-ic svg { width: 24px; height: 24px; stroke-width: 2; fill: none; stroke: currentColor; }
         .sum-ic.ic-blue   { background: #EFF6FF; color: #2563EB; }
         .sum-ic.ic-green  { background: #DCFCE7; color: #16A34A; }
         .sum-ic.ic-amber  { background: #FEF3C7; color: #D97706; }
         .sum-ic.ic-purple { background: #F5F3FF; color: #7C3AED; }
+        .sum-ic.ic-red    { background: #FEF2F2; color: #DC2626; }
+        
+        .sum-content {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
         .sum-num {
             font-family: 'Playfair Display', 'Inter', serif;
-            font-size: 18px; font-weight: 800; color: #0F172A; line-height: 1.05;
+            font-size: 20px; font-weight: 800; color: #0F172A; line-height: 1.2;
         }
-        .sum-lbl { font-size: 10px; font-weight: 600; color: #475569; }
-        .sum-sub { font-size: 9px; font-weight: 600; color: #94A3B8; }
+        .sum-lbl { font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 2px; }
+        .sum-sub { font-size: 11px; font-weight: 500; color: #94A3B8; }
 
         .filter-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr) auto auto;
-            gap: 14px;
-            align-items: end;
-            margin-bottom: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+            background: #F8FAFC;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 180px;
+        }
+        .filter-actions {
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        /* Mobile Filter Bar Fixes */
+        @media (max-width: 767px) {
+            html, body {
+                overflow-x: hidden !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                position: relative !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* Hide sidebar completely on mobile */
+            .sidebar-nav,
+            .sidebar-overlay,
+            .sidebar-toggle {
+                display: none !important;
+                width: 0 !important;
+            }
+
+            /* Navbar adjustments */
+            .navbar {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .navbar-content {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                padding: 0 8px !important;
+                margin: 0 !important;
+            }
+
+            .navbar-brand {
+                flex-shrink: 0 !important;
+                min-width: 0 !important;
+            }
+
+            .navbar-brand svg {
+                width: 28px !important;
+                height: 28px !important;
+            }
+
+            .navbar-titles {
+                flex: 1 !important;
+                min-width: 0 !important;
+                overflow: hidden !important;
+            }
+
+            .navbar-titles h1 {
+                font-size: 13px !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 120px !important;
+            }
+
+            .navbar-titles p {
+                font-size: 9px !important;
+            }
+
+            .navbar-user {
+                flex-shrink: 0 !important;
+                min-width: 0 !important;
+            }
+
+            .role-badge,
+            .user-info {
+                display: none !important;
+            }
+
+            .logout-btn span {
+                display: none !important;
+            }
+
+            /* Main content adjustments */
+            .main-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding-top: 56px !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+
+            /* Hide welcome bar on mobile */
+            .welcome-bar {
+                display: none !important;
+            }
+
+            .func-page-layout {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow-x: hidden !important;
+                padding: 10px 6px !important;
+                margin: 0 !important;
+            }
+
+            .sum-grid {
+                grid-template-columns: 1fr !important;
+                gap: 10px;
+                margin-bottom: 14px;
+                width: 100% !important;
+            }
+
+            .sum-card {
+                padding: 12px;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .panel {
+                border-radius: 12px;
+                overflow: hidden;
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+            }
+
+            .panel-header {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 10px;
+                padding: 14px;
+                width: 100% !important;
+            }
+
+            .panel-title {
+                font-size: 15px;
+                word-wrap: break-word;
+            }
+
+            .panel-actions {
+                flex-direction: column !important;
+                width: 100% !important;
+                gap: 8px;
+            }
+
+            .panel-actions button {
+                width: 100% !important;
+                max-width: 100% !important;
+                justify-content: center !important;
+                padding: 10px 14px;
+                font-size: 14px;
+                box-sizing: border-box !important;
+            }
+
+            .panel-body {
+                padding: 10px;
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow-x: hidden !important;
+            }
+
+            .filter-bar {
+                flex-direction: column !important;
+                gap: 10px;
+                padding: 10px;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            .filter-group {
+                flex: 1 1 100% !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            .filter-group label {
+                font-size: 12px;
+            }
+
+            .filter-group input,
+            .filter-group select {
+                width: 100% !important;
+                max-width: 100% !important;
+                font-size: 14px;
+                box-sizing: border-box !important;
+            }
+
+            .filter-actions {
+                flex-direction: column !important;
+                width: 100% !important;
+                gap: 8px;
+            }
+
+            .filter-actions button {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 10px;
+                font-size: 14px;
+                box-sizing: border-box !important;
+            }
+
+            /* Table horizontal scroll for mobile */
+            .table-responsive {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                border: 1px solid #E2E8F0 !important;
+                border-radius: 12px !important;
+            }
+
+            .table-responsive table {
+                min-width: 800px !important;
+                width: 100% !important;
+                display: table !important;
+            }
+
+            .table-responsive thead {
+                display: table-header-group !important;
+            }
+
+            .table-responsive tbody {
+                display: table-row-group !important;
+            }
+
+            .table-responsive tr {
+                display: table-row !important;
+            }
+
+            .table-responsive td {
+                display: table-cell !important;
+                padding: 12px 8px !important;
+                font-size: 12px !important;
+                border-bottom: 1px solid #F1F5F9 !important;
+            }
+
+            .table-responsive th {
+                padding: 12px 8px !important;
+                font-size: 11px !important;
+            }
+
+            /* Hide Owner Name and Place on mobile */
+            .table-responsive td:nth-child(4),
+            .table-responsive td:nth-child(5),
+            .table-responsive th:nth-child(4),
+            .table-responsive th:nth-child(5) {
+                display: none !important;
+            }
+
+            /* Hide Status and Action columns on mobile */
+            .table-responsive td:nth-child(8),
+            .table-responsive td:nth-child(9),
+            .table-responsive th:nth-child(8),
+            .table-responsive th:nth-child(9) {
+                display: none !important;
+            }
+
+            /* Hide func page elements */
+            .func-breadcrumb,
+            .func-page-hero {
+                display: none !important;
+            }
+
+            /* Hide footer bar */
+            .footer-bar {
+                display: none !important;
+            }
         }
         .action-eye {
-            width: 30px; height: 30px; border-radius: 8px;
+            width: 34px; height: 34px; border-radius: 8px;
             background: #EFF6FF; color: #0F4C81; border: 1px solid #DBEAFE;
             display: inline-flex; align-items: center; justify-content: center;
-            cursor: pointer; padding: 0;
+            cursor: pointer; transition: all 0.2s;
         }
-        .action-eye svg { width: 14px; height: 14px; stroke-width: 2; fill: none; stroke: currentColor; }
-        @media (max-width: 1024px) {
+        .action-eye:hover {
+            background: #DBEAFE;
+            transform: scale(1.05);
+        }
+        .action-eye svg { width: 16px; height: 16px; stroke-width: 2; fill: none; stroke: currentColor; }
+
+        @media (max-width: 1280px) {
+            .filter-group { min-width: 160px; }
+        }
+        @media (max-width: 768px) {
             .sum-grid { grid-template-columns: repeat(2, 1fr); }
-            .filter-bar { grid-template-columns: repeat(2, 1fr); }
+            .filter-group { flex: 1 1 calc(50% - 8px); }
+            .filter-actions { width: 100%; justify-content: stretch; }
+            .filter-actions button { flex: 1; }
         }
-        @media (max-width: 640px) {
+        @media (max-width: 480px) {
             .sum-grid { grid-template-columns: 1fr; }
-            .filter-bar { grid-template-columns: 1fr; }
+            .filter-group { flex: 1 1 100%; }
+            .panel-header { flex-direction: column; align-items: stretch; gap: 16px; }
+            .panel-actions { flex-direction: column; }
         }
 
         /* Responsive Table Styling */
@@ -85,33 +404,123 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             margin-bottom: 20px;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
         }
 
         .table-responsive table {
-            min-width: 800px;
-            table-layout: auto;
+            min-width: 1000px;
+            border-collapse: collapse;
         }
 
-        @media (max-width: 768px) {
+        /* Mobile Card Layout for Table */
+        @media (max-width: 767px) {
             .table-responsive {
-                border-radius: 12px;
-                border: 1px solid var(--border);
+                overflow-x: visible;
+                border: none;
+                border-radius: 0;
             }
-            
-            .data-table th,
-            .data-table td {
-                padding: 12px 10px;
-                font-size: 12px;
-                white-space: nowrap;
+
+            .table-responsive table {
+                min-width: 100%;
+                display: block;
+            }
+
+            .table-responsive thead {
+                display: none;
+            }
+
+            .table-responsive tbody {
+                display: block;
+            }
+
+            .table-responsive tr {
+                display: block;
+                background: #ffffff;
+                border: 1px solid #E2E8F0;
+                border-top: 3px solid #0F4C81;
+                border-radius: 12px;
+                margin-bottom: 8px;
+                padding: 12px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }
+
+            .table-responsive tr:hover {
+                background: #ffffff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            }
+
+            .table-responsive td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 8px;
+                border-bottom: 1px solid #E2E8F0;
+                font-size: 14px;
+                position: relative;
+            }
+
+            .table-responsive td::before {
+                display: none;
+            }
+
+            .table-responsive td:last-child {
+                border-bottom: none;
+            }
+
+            .table-responsive td::before {
+                display: block;
+            }
+
+            /* Hide Status and Action in mobile card view */
+            .table-responsive td:nth-child(8),
+            .table-responsive td:nth-child(9) {
+                display: none !important;
+            }
+
+            /* Special styling for status badge */
+            .table-responsive td:nth-child(8) {
+                justify-content: flex-start;
+            }
+
+            /* Special styling for action button */
+            .table-responsive td:nth-child(9) {
+                justify-content: flex-end;
+            }
+
+            .table-responsive td:nth-child(9)::before {
+                display: none;
             }
         }
 
-        @media (max-width: 480px) {
-            .data-table th,
-            .data-table td {
-                padding: 10px 8px;
-                font-size: 11px;
-            }
+        .data-table th {
+            background: #F8FAFC;
+            padding: 14px 16px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748B;
+            border-bottom: 1px solid #E2E8F0;
+            text-align: left;
+        }
+
+        .data-table td {
+            padding: 16px;
+            border-bottom: 1px solid #F1F5F9;
+            font-size: 14px;
+            color: #334155;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover {
+            background: #F8FAFC;
+        }
+        .func-breadcrumb, .func-page-hero {
+            display: none !important;
         }
     </style>
 </head>
@@ -124,40 +533,40 @@
                 <div class="sum-ic ic-blue">
                     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 </div>
-                <div>
-                    <div class="sum-num">128</div>
+                <div class="sum-content">
                     <div class="sum-lbl">Total Challans</div>
-                    <div class="sum-sub">This Period</div>
+                    <div class="sum-num" id="statTotalCount">0</div>
+                    <div class="sum-sub">For current selection</div>
                 </div>
             </div>
             <div class="sum-card">
                 <div class="sum-ic ic-green">
                     <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 </div>
-                <div>
-                    <div class="sum-num">72</div>
-                    <div class="sum-lbl">Paid Challans</div>
-                    <div class="sum-sub">This Period</div>
+                <div class="sum-content">
+                    <div class="sum-lbl">Amount Collected</div>
+                    <div class="sum-num" id="statPaidAmount">&#8377; 0</div>
+                    <div class="sum-sub" id="statPaidCount">0 Paid</div>
                 </div>
             </div>
             <div class="sum-card">
-                <div class="sum-ic ic-amber">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <div class="sum-ic ic-red">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 </div>
-                <div>
-                    <div class="sum-num">46</div>
-                    <div class="sum-lbl">Pending Challans</div>
-                    <div class="sum-sub">This Period</div>
+                <div class="sum-content">
+                    <div class="sum-lbl">Amount Pending</div>
+                    <div class="sum-num" id="statPendingAmount">&#8377; 0</div>
+                    <div class="sum-sub" id="statPendingCount">0 Unpaid</div>
                 </div>
             </div>
             <div class="sum-card">
                 <div class="sum-ic ic-purple">
                     <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 </div>
-                <div>
-                    <div class="sum-num">&#8377; 1,28,450</div>
-                    <div class="sum-lbl">Total Amount</div>
-                    <div class="sum-sub">This Period</div>
+                <div class="sum-content">
+                    <div class="sum-lbl">Total Business</div>
+                    <div class="sum-num" id="statTotalAmount">&#8377; 0</div>
+                    <div class="sum-sub">Total fine value</div>
                 </div>
             </div>
         </section>
@@ -179,41 +588,42 @@
             <div class="panel-body">
                 <!-- Filters: From Date, To Date, Place, Status, Filter, Reset -->
                 <div class="filter-bar">
-                    <div class="func-form-group">
+                    <div class="filter-group">
                         <label class="func-form-label">From Date</label>
-                        <input type="date" class="func-form-input" value="2026-07-25" />
+                        <input type="date" id="filterFromDate" class="func-form-input" value="" />
                     </div>
-                    <div class="func-form-group">
+                    <div class="filter-group">
                         <label class="func-form-label">To Date</label>
-                        <input type="date" class="func-form-input" value="2026-08-02" />
+                        <input type="date" id="filterToDate" class="func-form-input" value="" />
                     </div>
-                    <div class="func-form-group">
+                    <div class="filter-group">
                         <label class="func-form-label">Place</label>
-                        <select class="func-form-select">
+                        <select id="filterPlace" class="func-form-select">
+                            <option value="All" selected>All Locations</option>
                             <option>Solapur City</option>
                             <option>Vijapur Road</option>
                             <option>Hyderabad Naka</option>
                             <option>Ring Road</option>
-                            <option>All Locations</option>
                         </select>
                     </div>
-                    <div class="func-form-group">
+                    <div class="filter-group">
                         <label class="func-form-label">Status</label>
-                        <select class="func-form-select">
-                            <option>All</option>
+                        <select id="filterStatus" class="func-form-select">
+                            <option value="All" selected>All Status</option>
                             <option>Paid</option>
                             <option>Pending</option>
-                            <option>Overdue</option>
                         </select>
                     </div>
-                    <button class="btn btn-primary" type="button" style="min-width: 110px;">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                        Filter
-                    </button>
-                    <button class="btn btn-outline" type="button" style="min-width: 100px;">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                        Reset
-                    </button>
+                    <div class="filter-actions">
+                        <button id="applyFilterBtn" class="btn btn-primary" type="button" style="min-width: 110px;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                            Filter
+                        </button>
+                        <button id="resetFilterBtn" class="btn btn-outline" type="button" style="min-width: 100px;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            Reset
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Table: plain list, no cards -->
@@ -222,179 +632,25 @@
                         <thead>
                             <tr>
                                 <th>Challan No.</th>
-                                <th>
-                                    Date &amp; Time
-                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;margin-left:4px;opacity:.6;"><polyline points="6 9 12 15 18 9"/></svg>
-                                </th>
+                                <th>Date &amp; Time</th>
                                 <th>Vehicle No.</th>
                                 <th>Owner Name</th>
                                 <th>Place</th>
                                 <th>Violation</th>
-                                <th>Amount (&#8377;)</th>
-                                <th>Status</th>
-                                <th style="width: 60px;">Action</th>
+                                <th style="text-align: right;">Amount (&#8377;)</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td style="font-weight: 700; color: #0F4C81;">CH-2026-00128</td>
-                                <td>
-                                    <div style="font-weight: 600;">02/08/2026</div>
-                                    <div style="font-size: 11px; color: #64748B;">10:45 AM</div>
-                                </td>
-                                <td style="font-weight: 700; color: #0F172A;">MH 13 AB 1234</td>
-                                <td style="font-weight: 600; color: #334155;">Sandeep Kulkarni</td>
-                                <td>Solapur City</td>
-                                <td>No Helmet</td>
-                                <td style="font-weight: 700; color: #0F172A;">500</td>
-                                <td><span class="status-badge paid">Paid</span></td>
-                                <td>
-                                    <button class="action-eye" title="View details">
-                                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; color: #0F4C81;">CH-2026-00127</td>
-                                <td>
-                                    <div style="font-weight: 600;">02/08/2026</div>
-                                    <div style="font-size: 11px; color: #64748B;">09:30 AM</div>
-                                </td>
-                                <td style="font-weight: 700; color: #0F172A;">MH 13 CD 5678</td>
-                                <td style="font-weight: 600; color: #334155;">Ramesh Jadhav</td>
-                                <td>Solapur City</td>
-                                <td>Over Speeding</td>
-                                <td style="font-weight: 700; color: #0F172A;">1,000</td>
-                                <td><span class="status-badge pending">Pending</span></td>
-                                <td>
-                                    <button class="action-eye" title="View details">
-                                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; color: #0F4C81;">CH-2026-00126</td>
-                                <td>
-                                    <div style="font-weight: 600;">01/08/2026</div>
-                                    <div style="font-size: 11px; color: #64748B;">06:15 PM</div>
-                                </td>
-                                <td style="font-weight: 700; color: #0F172A;">MH 13 EF 9012</td>
-                                <td style="font-weight: 600; color: #334155;">Vikram Deshmukh</td>
-                                <td>Vijapur Road</td>
-                                <td>No Parking</td>
-                                <td style="font-weight: 700; color: #0F172A;">500</td>
-                                <td><span class="status-badge paid">Paid</span></td>
-                                <td>
-                                    <button class="action-eye" title="View details">
-                                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; color: #0F4C81;">CH-2026-00125</td>
-                                <td>
-                                    <div style="font-weight: 600;">01/08/2026</div>
-                                    <div style="font-size: 11px; color: #64748B;">04:50 PM</div>
-                                </td>
-                                <td style="font-weight: 700; color: #0F172A;">MH 13 GH 3456</td>
-                                <td style="font-weight: 600; color: #334155;">Akash More</td>
-                                <td>Solapur City</td>
-                                <td>Triple Riding</td>
-                                <td style="font-weight: 700; color: #0F172A;">1,000</td>
-                                <td><span class="status-badge pending">Pending</span></td>
-                                <td>
-                                    <button class="action-eye" title="View details">
-                                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; color: #0F4C81;">CH-2026-00124</td>
-                                <td>
-                                    <div style="font-weight: 600;">01/08/2026</div>
-                                    <div style="font-size: 11px; color: #64748B;">03:20 PM</div>
-                                </td>
-                                <td style="font-weight: 700; color: #0F172A;">MH 13 IJ 7890</td>
-                                <td style="font-weight: 600; color: #334155;">Pravin Bhosale</td>
-                                <td>Hyderabad Naka</td>
-                                <td>Without License</td>
-                                <td style="font-weight: 700; color: #0F172A;">2,000</td>
-                                <td><span class="status-badge paid">Paid</span></td>
-                                <td>
-                                    <button class="action-eye" title="View details">
-                                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; color: #0F4C81;">CH-2026-00123</td>
-                                <td>
-                                    <div style="font-weight: 600;">31/07/2026</div>
-                                    <div style="font-size: 11px; color: #64748B;">11:10 AM</div>
-                                </td>
-                                <td style="font-weight: 700; color: #0F172A;">MH 13 KL 2468</td>
-                                <td style="font-weight: 600; color: #334155;">Rohit Shinde</td>
-                                <td>Solapur City</td>
-                                <td>No Seat Belt</td>
-                                <td style="font-weight: 700; color: #0F172A;">500</td>
-                                <td><span class="status-badge pending">Pending</span></td>
-                                <td>
-                                    <button class="action-eye" title="View details">
-                                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; color: #0F4C81;">CH-2026-00122</td>
-                                <td>
-                                    <div style="font-weight: 600;">31/07/2026</div>
-                                    <div style="font-size: 11px; color: #64748B;">10:05 AM</div>
-                                </td>
-                                <td style="font-weight: 700; color: #0F172A;">MH 13 MN 1357</td>
-                                <td style="font-weight: 600; color: #334155;">Mahesh Pawar</td>
-                                <td>Ring Road</td>
-                                <td>Signal Jump</td>
-                                <td style="font-weight: 700; color: #0F172A;">1,000</td>
-                                <td><span class="status-badge paid">Paid</span></td>
-                                <td>
-                                    <button class="action-eye" title="View details">
-                                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; color: #0F4C81;">CH-2026-00121</td>
-                                <td>
-                                    <div style="font-weight: 600;">30/07/2026</div>
-                                    <div style="font-size: 11px; color: #64748B;">05:25 PM</div>
-                                </td>
-                                <td style="font-weight: 700; color: #0F172A;">MH 13 OP 9753</td>
-                                <td style="font-weight: 600; color: #334155;">Anil Kumbhar</td>
-                                <td>Solapur City</td>
-                                <td>No Helmet</td>
-                                <td style="font-weight: 700; color: #0F172A;">500</td>
-                                <td><span class="status-badge paid">Paid</span></td>
-                                <td>
-                                    <button class="action-eye" title="View details">
-                                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
+                        <tbody id="challanTableBody">
+                            <!-- Data will be loaded dynamically -->
                         </tbody>
                     </table>
                 </div>
 
                 <!-- Pagination -->
-                <div class="data-pagination">
-                    <div class="pagination-info">Showing 1 to 8 of <strong>128</strong> records</div>
-                    <div class="pagination-controls">
-                        <button class="page-btn" disabled>Previous</button>
-                        <button class="page-btn active">1</button>
-                        <button class="page-btn">2</button>
-                        <button class="page-btn">3</button>
-                        <button class="page-btn">...</button>
-                        <button class="page-btn">16</button>
-                        <button class="page-btn">Next</button>
+                <div class="data-pagination" id="paginationRow" style="display: none;">
+                    <div class="pagination-info" id="paginationInfo">Showing 0 to 0 of <strong>0</strong> records</div>
+                    <div class="pagination-controls" id="paginationControls">
+                        <!-- Pagination buttons will be loaded dynamically -->
                     </div>
                 </div>
             </div>
@@ -403,16 +659,154 @@
 
     <script src="../js/dashboard.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            DashboardApp.renderFunctionPage({
+        document.addEventListener('DOMContentLoaded', async function() {
+            const auth = DashboardApp.renderFunctionPage({
                 allowedRoles: ['POLICE'],
                 dashboardLabel: 'Police Dashboard',
                 pageTitle: 'Challan History',
-                pageDescription: 'View all issued challans. Use filters to search specific records.',
                 pageIcon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
                 activeMenuKey: 'challanHistory'
             });
+
+            if (auth) {
+                // Attach filter events
+                document.getElementById('applyFilterBtn').onclick = filterChallans;
+                document.getElementById('resetFilterBtn').onclick = () => {
+                    document.getElementById('filterFromDate').value = '';
+                    document.getElementById('filterToDate').value = '';
+                    document.getElementById('filterPlace').value = 'All';
+                    document.getElementById('filterStatus').value = 'All';
+                    renderChallans(allChallans);
+                };
+                
+                fetchChallans();
+            }
         });
+
+        let allChallans = [];
+
+        async function fetchChallans() {
+            const tbody = document.getElementById('challanTableBody');
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;">Loading challans...</td></tr>';
+
+            try {
+                const response = await fetch('/api/admin/challans');
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    allChallans = result.data;
+                    renderChallans(allChallans);
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:red;">Failed to load challans: ${result.message || 'Unknown error'}</td></tr>`;
+                }
+            } catch (error) {
+                console.error('Error fetching challans:', error);
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:red;">Error connecting to server. Please try again.</td></tr>';
+            }
+        }
+
+        function filterChallans() {
+            const fromDate = document.getElementById('filterFromDate').value;
+            const toDate = document.getElementById('filterToDate').value;
+            const place = document.getElementById('filterPlace').value;
+            const status = document.getElementById('filterStatus').value;
+
+            console.log('Filtering with:', { fromDate, toDate, place, status });
+
+            let filtered = allChallans;
+
+            if (fromDate) {
+                filtered = filtered.filter(c => c.challanDate >= fromDate);
+            }
+            if (toDate) {
+                filtered = filtered.filter(c => c.challanDate <= toDate);
+            }
+            if (place && place !== 'All') {
+                filtered = filtered.filter(c => c.location && c.location.toLowerCase().includes(place.toLowerCase()));
+            }
+            if (status && status !== 'All') {
+                filtered = filtered.filter(c => {
+                    const isPaid = (c.paymentStatus && c.paymentStatus.toLowerCase() === 'paid') || 
+                                 (c.status && c.status.toLowerCase() === 'paid');
+                    if (status === 'Paid') return isPaid;
+                    if (status === 'Pending') return !isPaid;
+                    return true;
+                });
+            }
+
+            console.log('Filtered results:', filtered.length);
+            renderChallans(filtered);
+        }
+
+        function renderChallans(challans) {
+            const tbody = document.getElementById('challanTableBody');
+            
+            // Render Table
+            tbody.innerHTML = '';
+            
+            if (!challans || challans.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No challans found matching the filters.</td></tr>';
+                // Update stats to zero
+                updateSummaryStats([]);
+                return;
+            }
+
+            // Update Summary Stats
+            updateSummaryStats(challans);
+
+            challans.forEach(c => {
+                const row = document.createElement('tr');
+                
+                const isPaid = (c.paymentStatus && c.paymentStatus.toLowerCase() === 'paid') || 
+                             (c.status && c.status.toLowerCase() === 'paid');
+                
+                const statusClass = isPaid ? 'paid' : 'pending';
+                const statusText = isPaid ? 'Paid' : 'Pending';
+
+                row.innerHTML = `
+                    <td data-label="Challan No." style="font-weight: 700; color: #0F4C81;">${c.challanNumber}</td>
+                    <td data-label="Date & Time">
+                        <div style="font-weight: 600;">${c.challanDate}</div>
+                        <div style="font-size: 11px; color: #64748B;">${c.challanTime || '--:--'}</div>
+                    </td>
+                    <td data-label="Vehicle No." style="font-weight: 700; color: #0F172A;">${c.vehicleNo}</td>
+                    <td data-label="Owner Name" style="font-weight: 600; color: #334155;">${c.ownerName || 'Unknown'}</td>
+                    <td data-label="Place">${c.location || 'Unknown'}</td>
+                    <td data-label="Violation">${c.violationName || 'Violation ' + c.violationIds}</td>
+                    <td data-label="Amount" style="font-weight: 700; color: #0F172A; text-align: right;">${Number(c.totalFineAmount).toLocaleString('en-IN')}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateSummaryStats(challans) {
+            let paid = 0;
+            let pending = 0;
+            let totalAmt = 0;
+
+            challans.forEach(c => {
+                const isPaid = (c.paymentStatus && c.paymentStatus.toLowerCase() === 'paid') || 
+                             (c.status && c.status.toLowerCase() === 'paid');
+                if (isPaid) paid++;
+                else pending++;
+                totalAmt += (Number(c.totalFineAmount) || 0);
+            });
+
+            const totalChallansEl = document.querySelector('.sum-card:nth-child(1) .sum-num');
+            const paidChallansEl = document.querySelector('.sum-card:nth-child(2) .sum-num');
+            const pendingChallansEl = document.querySelector('.sum-card:nth-child(3) .sum-num');
+            const totalAmountEl = document.querySelector('.sum-card:nth-child(4) .sum-num');
+
+            if (totalChallansEl) totalChallansEl.textContent = challans.length;
+            if (paidChallansEl) paidChallansEl.textContent = paid;
+            if (pendingChallansEl) pendingChallansEl.textContent = pending;
+            if (totalAmountEl) totalAmountEl.innerHTML = '&#8377; ' + totalAmt.toLocaleString('en-IN');
+        }
+
+        function viewChallanDetails(challanNumber) {
+            // Future implementation: show details modal or redirect
+            alert('Viewing details for challan: ' + challanNumber);
+        }
     </script>
 </body>
 </html>

@@ -1705,6 +1705,25 @@
                     updateGenerateButton();
                 }
 
+                // Fetch pending (unpaid) challans for a vehicle from the database.
+                // Returns { count, fine } or null when the API is unreachable.
+                async function fetchPendingChallansFromDb(vn) {
+                    const res = await apiFetch('/challan/vehicle?vehicleNo=' + encodeURIComponent(vn), { method: 'GET' });
+                    if (!res || !res.success || !Array.isArray(res.data)) return null;
+                    let count = 0;
+                    let fine = 0;
+                    res.data.forEach(function(c) {
+                        const paid = (c.paymentStatus || '').toLowerCase() === 'paid';
+                        const st = (c.status || '').toUpperCase();
+                        const closed = st === 'CANCELLED' || st === 'EXPIRED' || st === 'PAID';
+                        if (!paid && !closed) {
+                            count++;
+                            fine += Number(c.totalFineAmount) || 0;
+                        }
+                    });
+                    return { count: count, fine: fine };
+                }
+
                 let lastSearchedVN = '';
                 let autoSearchTimer = null;
 
@@ -1736,9 +1755,9 @@
 
                     let found = false;
                     let resultData = null;
-                    const apiRes = await apiFetch('/puc/search-vehicle/' + encodeURIComponent(vn), { method: 'GET' });
-                    if (apiRes && apiRes.success && apiRes.data) {
-                        const v = apiRes.data;
+                    const apiRes = await apiFetch('/vehicle/lookup?vehicleNo=' + encodeURIComponent(vn), { method: 'GET' });
+                    if (apiRes && apiRes.success && apiRes.vehicle) {
+                        const v = apiRes.vehicle;
                         const fmt = v.registrationDate ? (() => {
                             try {
                                 const d = new Date(v.registrationDate);
@@ -1756,47 +1775,40 @@
                             engine: v.engineNumber || '',
                             chassis: v.chassisNumber || ''
                         };
-                        
-                        // Check for pending challans
-                        const normVN = vn.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                        const hasPendingChallans = window.VehicleData && window.VehicleData.hasPendingChallans ? window.VehicleData.hasPendingChallans(normVN) : false;
-                        if (hasPendingChallans) {
-                            const pendingCount = window.VehicleData && window.VehicleData.getPendingChallanCount ? window.VehicleData.getPendingChallanCount(normVN) : 0;
-                            resultData.hasPendingChallans = true;
-                            resultData.pendingChallanCount = pendingCount;
-                        }
-                        
-                        applyVehicleSearchResult(resultData);
                         found = true;
-                        if (!silent) {
-                            if (hasPendingChallans) {
-                                showToast('Vehicle found but has ' + resultData.pendingChallanCount + ' pending challan(s). PUC cannot be issued until challans are cleared.', 'error');
-                            } else {
-                                showToast('Vehicle found in RTO database. Details auto-filled.', 'success');
-                            }
-                        }
                     } else {
                         const storeResult = lookupVehicleInStore(vn);
                         if (storeResult) {
                             resultData = storeResult;
-                            
-                            // Check for pending challans in store result
-                            const normVN = vn.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                            const hasPendingChallans = window.VehicleData && window.VehicleData.hasPendingChallans ? window.VehicleData.hasPendingChallans(normVN) : false;
-                            if (hasPendingChallans) {
-                                const pendingCount = window.VehicleData && window.VehicleData.getPendingChallanCount ? window.VehicleData.getPendingChallanCount(normVN) : 0;
-                                resultData.hasPendingChallans = true;
-                                resultData.pendingChallanCount = pendingCount;
-                            }
-                            
-                            applyVehicleSearchResult(resultData);
                             found = true;
-                            if (!silent) {
-                                if (hasPendingChallans) {
-                                    showToast('Vehicle found but has ' + resultData.pendingChallanCount + ' pending challan(s). PUC cannot be issued until challans are cleared.', 'error');
-                                } else {
-                                    showToast('Vehicle found in offline database. Details auto-filled.', 'success');
-                                }
+                        }
+                    }
+
+                    if (found) {
+                        // Pending challans: database is treated as the source of truth,
+                        // the offline store is only a fallback when the API is unreachable.
+                        const dbPending = await fetchPendingChallansFromDb(vn);
+                        let pCount = 0;
+                        let pFine = 0;
+                        if (dbPending) {
+                            pCount = dbPending.count;
+                            pFine = dbPending.fine;
+                        } else {
+                            const normVN = vn.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                            if (window.VehicleData && window.VehicleData.hasPendingChallans && window.VehicleData.hasPendingChallans(normVN)) {
+                                pCount = window.VehicleData.getPendingChallanCount ? window.VehicleData.getPendingChallanCount(normVN) : 1;
+                            }
+                        }
+                        resultData.hasPendingChallans = pCount > 0;
+                        resultData.pendingChallanCount = pCount;
+                        resultData.pendingChallanFine = pFine;
+
+                        applyVehicleSearchResult(resultData);
+                        if (!silent) {
+                            if (pCount > 0) {
+                                showToast('Vehicle found but has ' + pCount + ' pending challan(s)' + (pFine > 0 ? ' (Rs.' + pFine + ')' : '') + '. PUC cannot be issued until challans are cleared.', 'error');
+                            } else {
+                                showToast('Vehicle found. Details auto-filled.', 'success');
                             }
                         }
                     }
@@ -2420,6 +2432,26 @@
                         method: 'POST',
                         body: JSON.stringify(payload)
                     });
+                    if (apiRes && apiRes.success === false && apiRes.data && apiRes.data.blocked) {
+                        // Backend refused the service because challans are pending
+                        const blockedCount = apiRes.data.pendingChallanCount || 0;
+                        const blockedFine = apiRes.data.pendingFineAmount || 0;
+                        hasPendingChallans = true;
+                        pendingChallanCount = blockedCount;
+                        const challanWarningEl = document.getElementById('challanWarning');
+                        if (challanWarningEl) {
+                            challanWarningEl.style.display = 'block';
+                            challanWarningEl.innerHTML = '<strong>⛔ ' + blockedCount + ' Pending Challan(s)</strong><br>' +
+                                'PUC certificate cannot be issued until all challans' +
+                                (blockedFine > 0 ? ' (total fine Rs.' + blockedFine + ')' : '') + ' are cleared.';
+                        }
+                        $('pucPreviewPanel').classList.remove('visible');
+                        $('pucLoading').classList.remove('visible');
+                        showToast('⛔ ' + (apiRes.message || 'PUC service blocked due to pending challans.'), 'danger');
+                        btn.innerHTML = origHTML;
+                        updateGenerateButton();
+                        return;
+                    }
                     if (apiRes && apiRes.success && apiRes.data) {
                         const finalCertNo = apiRes.data.certificateNumber || certNo;
                         if (apiRes.data.certificateNumber) {
@@ -2582,6 +2614,13 @@
                 const ampm = hrs >= 12 ? 'PM' : 'AM';
                 hrs = hrs % 12 || 12;
                 $('f_testDateTime').value = dateStr + ' ' + hrs + ':' + mins + ' ' + ampm;
+
+                // Add event listener to update expiry date when test date changes
+                $('f_testDateTime').addEventListener('input', function() {
+                    const testDateStr = this.value;
+                    const expiryDate = computeExpiry(testDateStr);
+                    $('pv_validity').textContent = expiryDate || '—';
+                });
 
                 if (auth && auth.user) {
                     const role = auth.user.role || '';

@@ -46,8 +46,7 @@ const DashboardApp = (function() {
         POLICE: [
             { key: 'overview', label: 'Overview', icon: SIDEBAR_ICONS.overview, href: 'police-dashboard.html' },
             { key: 'anprScanner', label: 'ANPR Scanner', icon: SIDEBAR_ICONS.anprScanner, href: 'anpr-scanner-new.html' },
-            { key: 'challanHistory', label: 'Challan History', icon: SIDEBAR_ICONS.challanHistory, href: 'challan-history.html' },
-            { key: 'todayDuty', label: 'Today Duty', icon: SIDEBAR_ICONS.todayDuty, href: 'police-dashboard.html' }
+            { key: 'challanHistory', label: 'Challan History', icon: SIDEBAR_ICONS.challanHistory, href: 'challan-history.html' }
         ],
         PUC_CENTER: [
             { key: 'overview', label: 'Overview', icon: SIDEBAR_ICONS.overview, href: 'puc-dashboard.html' },

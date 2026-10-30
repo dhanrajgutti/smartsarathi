@@ -46,7 +46,7 @@ public class PUCCertificateDAO {
                 "test_date_time, emission_norms, odometer_km, co_percent, hc_ppm, " +
                 "co2_percent, lambda_value, pollution_under_control, valid_from, valid_upto, " +
                 "status, issued_by_user_id, issued_by_name) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Valid', ?, ?)";
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Valid', ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

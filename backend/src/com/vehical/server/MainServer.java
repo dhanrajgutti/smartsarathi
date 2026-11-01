@@ -33,10 +33,15 @@ public class MainServer {
         httpServer.createContext("/api/auth/me", new MeHandler());
         httpServer.createContext("/api/vehicle/lookup", new VehicleLookupHandler());
         httpServer.createContext("/api/vehicle/register", new VehicleRegisterHandler());
-        httpServer.createContext("/puc/issue", new PUCIssueHandler());
-        httpServer.createContext("/puc/history", new PUCHistoryHandler());
+        httpServer.createContext("/api/puc/issue", new PUCIssueHandler());
+        httpServer.createContext("/api/puc/history", new PUCHistoryHandler());
+        httpServer.createContext("/api/puc/reminders", new PUCRemindersHandler());
+        httpServer.createContext("/api/puc/send-reminder", new SendPUCReminderHandler());
+        httpServer.createContext("/api/insurance/reminders", new InsuranceRemindersHandler());
+        httpServer.createContext("/api/insurance/send-reminder", new SendInsuranceReminderHandler());
         httpServer.createContext("/api/insurance/policy", new InsurancePolicyHandler());
         httpServer.createContext("/api/insurance/history", new InsuranceHistoryHandler());
+        httpServer.createContext("/api/challan", new AdminChallansHandler());
         httpServer.createContext("/api/challan/pay", new ChallanPayHandler());
         httpServer.createContext("/api/challan/vehicle", new ChallanVehicleHandler());
         
@@ -64,8 +69,8 @@ public class MainServer {
         System.out.println("  GET  http://localhost:" + PORT + "/api/auth/me");
         System.out.println("  GET  http://localhost:" + PORT + "/api/vehicle/lookup?vehicleNo=MH-04-AB-1234");
         System.out.println("  POST http://localhost:" + PORT + "/api/vehicle/register");
-        System.out.println("  POST http://localhost:" + PORT + "/puc/issue");
-        System.out.println("  GET  http://localhost:" + PORT + "/puc/history");
+        System.out.println("  POST http://localhost:" + PORT + "/api/puc/issue");
+        System.out.println("  GET  http://localhost:" + PORT + "/api/puc/history");
         System.out.println("  POST http://localhost:" + PORT + "/api/insurance/policy");
         System.out.println("  GET  http://localhost:" + PORT + "/api/insurance/history");
         System.out.println("  POST http://localhost:" + PORT + "/api/challan/pay");
@@ -169,6 +174,94 @@ public class MainServer {
                 sendResponse(exchange, 200, responseData);
 
             } catch (Exception e) {
+                e.printStackTrace();
+                sendResponse(exchange, 500, "{\"success\": false, \"message\": \"Server error: " + e.getMessage() + "\"}");
+            }
+        }
+    }
+
+    static class InsuranceRemindersHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!exchange.getRequestMethod().equals("GET")) {
+                sendResponse(exchange, 405, "{\"success\": false, \"message\": \"Method not allowed\"}");
+                return;
+            }
+
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+
+            try {
+                AdminDAO adminDAO = new AdminDAO();
+                java.util.List<java.util.Map<String, Object>> reminders = adminDAO.getInsuranceReminders();
+
+                StringBuilder json = new StringBuilder();
+                json.append("{\"success\": true, \"message\": \"Insurance reminders retrieved\", \"data\": [");
+
+                for (int i = 0; i < reminders.size(); i++) {
+                    if (i > 0) json.append(",");
+                    java.util.Map<String, Object> r = reminders.get(i);
+                    json.append("{");
+                    json.append("\"vehicleNo\":\"").append(r.get("vehicleNo")).append("\",");
+                    json.append("\"ownerName\":\"").append(r.get("ownerName")).append("\",");
+                    json.append("\"phone\":\"").append(r.get("phone") != null ? r.get("phone") : "").append("\",");
+                    json.append("\"email\":\"").append(r.get("email") != null ? r.get("email") : "").append("\",");
+                    json.append("\"vehicleType\":\"").append(r.get("vehicleType")).append("\",");
+                    json.append("\"validUpto\":\"").append(r.get("validUpto")).append("\",");
+                    json.append("\"daysRemaining\":").append(r.get("daysRemaining"));
+                    json.append("}");
+                }
+
+                json.append("]}");
+                sendResponse(exchange, 200, json.toString());
+
+            } catch (Exception e) {
+                System.err.println("Insurance reminders error: " + e.getMessage());
+                e.printStackTrace();
+                sendResponse(exchange, 500, "{\"success\": false, \"message\": \"Server error: " + e.getMessage() + "\"}");
+            }
+        }
+    }
+
+    static class SendInsuranceReminderHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!exchange.getRequestMethod().equals("POST")) {
+                sendResponse(exchange, 405, "{\"success\": false, \"message\": \"Method not allowed\"}");
+                return;
+            }
+
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+
+            if (exchange.getRequestMethod().equals("OPTIONS")) {
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
+
+            try {
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                Map<String, String> params = parseJson(body);
+
+                String vehicleNo = params.get("vehicleNo");
+                String email = params.get("email");
+                String ownerName = params.get("ownerName");
+                String validUpto = params.get("validUpto");
+                String channel = params.get("channel");
+
+                if (vehicleNo == null || email == null) {
+                    sendResponse(exchange, 400, "{\"success\": false, \"message\": \"Vehicle number and email are required\"}");
+                    return;
+                }
+
+                // Simulate sending email
+                System.out.println("Sending Insurance Renewal Reminder to " + ownerName + " (" + email + ") for vehicle " + vehicleNo);
+                System.out.println("Expiry Date: " + validUpto + ", Channel: " + channel);
+
+                sendResponse(exchange, 200, "{\"success\": true, \"message\": \"Insurance reminder sent successfully to " + email + "\"}");
+
+            } catch (Exception e) {
+                System.err.println("Send insurance reminder error: " + e.getMessage());
                 e.printStackTrace();
                 sendResponse(exchange, 500, "{\"success\": false, \"message\": \"Server error: " + e.getMessage() + "\"}");
             }
@@ -766,6 +859,94 @@ public class MainServer {
         }
     }
 
+    static class PUCRemindersHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!exchange.getRequestMethod().equals("GET")) {
+                sendResponse(exchange, 405, "{\"success\": false, \"message\": \"Method not allowed\"}");
+                return;
+            }
+
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+
+            try {
+                AdminDAO adminDAO = new AdminDAO();
+                java.util.List<java.util.Map<String, Object>> reminders = adminDAO.getPUCReminders();
+
+                StringBuilder json = new StringBuilder();
+                json.append("{\"success\": true, \"message\": \"PUC reminders retrieved\", \"data\": [");
+
+                for (int i = 0; i < reminders.size(); i++) {
+                    if (i > 0) json.append(",");
+                    java.util.Map<String, Object> r = reminders.get(i);
+                    json.append("{");
+                    json.append("\"vehicleNo\":\"").append(r.get("vehicleNo")).append("\",");
+                    json.append("\"ownerName\":\"").append(r.get("ownerName")).append("\",");
+                    json.append("\"phone\":\"").append(r.get("phone") != null ? r.get("phone") : "").append("\",");
+                    json.append("\"email\":\"").append(r.get("email") != null ? r.get("email") : "").append("\",");
+                    json.append("\"fuelType\":\"").append(r.get("fuelType")).append("\",");
+                    json.append("\"validUpto\":\"").append(r.get("validUpto")).append("\",");
+                    json.append("\"daysRemaining\":").append(r.get("daysRemaining"));
+                    json.append("}");
+                }
+
+                json.append("]}");
+                sendResponse(exchange, 200, json.toString());
+
+            } catch (Exception e) {
+                System.err.println("PUC reminders error: " + e.getMessage());
+                e.printStackTrace();
+                sendResponse(exchange, 500, "{\"success\": false, \"message\": \"Server error: " + e.getMessage() + "\"}");
+            }
+        }
+    }
+
+    static class SendPUCReminderHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!exchange.getRequestMethod().equals("POST")) {
+                sendResponse(exchange, 405, "{\"success\": false, \"message\": \"Method not allowed\"}");
+                return;
+            }
+
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+
+            if (exchange.getRequestMethod().equals("OPTIONS")) {
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
+
+            try {
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                Map<String, String> params = parseJson(body);
+
+                String vehicleNo = params.get("vehicleNo");
+                String email = params.get("email");
+                String ownerName = params.get("ownerName");
+                String validUpto = params.get("validUpto");
+                String channel = params.get("channel");
+
+                if (vehicleNo == null || email == null) {
+                    sendResponse(exchange, 400, "{\"success\": false, \"message\": \"Vehicle number and email are required\"}");
+                    return;
+                }
+
+                // Simulate sending email
+                System.out.println("Sending PUC Renewal Reminder to " + ownerName + " (" + email + ") for vehicle " + vehicleNo);
+                System.out.println("Expiry Date: " + validUpto + ", Channel: " + channel);
+
+                sendResponse(exchange, 200, "{\"success\": true, \"message\": \"Reminder sent successfully to " + email + "\"}");
+
+            } catch (Exception e) {
+                System.err.println("Send reminder error: " + e.getMessage());
+                e.printStackTrace();
+                sendResponse(exchange, 500, "{\"success\": false, \"message\": \"Server error: " + e.getMessage() + "\"}");
+            }
+        }
+    }
+
     // ==================== INSURANCE API HANDLERS ====================
 
     static class InsurancePolicyHandler implements HttpHandler {
@@ -1197,13 +1378,23 @@ public class MainServer {
                     String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                     Map<String, String> params = parseJson(body);
                     
+                    String fineStr = params.get("totalFineAmount");
+                    if (fineStr == null) fineStr = params.get("totalFine");
+                    int totalFineAmount = fineStr != null ? Integer.parseInt(fineStr) : 0;
+
+                    String vIds = params.get("violationIds");
+                    if (vIds != null && vIds.startsWith("[") && vIds.endsWith("]")) {
+                        vIds = vIds.substring(1, vIds.length() - 1).replaceAll("\"", "");
+                    }
+
                     boolean success = adminDAO.addChallan(
                         params.get("challanNumber"),
                         params.get("vehicleNo"),
                         params.get("officerId"),
-                        params.get("violationIds"),
-                        Integer.parseInt(params.get("totalFineAmount")),
+                        vIds,
+                        totalFineAmount,
                         params.get("challanDate"),
+                        params.get("challanTime"),
                         params.get("location"),
                         params.get("status"),
                         params.get("remarks")

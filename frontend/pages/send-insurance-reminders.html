@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Renewal Reminders - Vehicle Verification Portal</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .info-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .info-strip-item {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            border-bottom: 3px solid var(--navy-primary);
+        }
+        
+        .info-strip-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        
+        .info-strip-value {
+            font-size: 22px;
+            font-weight: 800;
+        }
+        
+        .data-table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        @media (max-width: 768px) {
+            .info-strip {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .panel-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            
+            .panel-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+        
+        .status-badge.expired { background: #FEE2E2; color: #991B1B; }
+        .status-badge.pending { background: #FEF3C7; color: #92400E; }
+        .status-badge.valid { background: #D1FAE5; color: #065F46; }
+    </style>
+</head>
+<body>
+        <div id="funcPageMount"></div>
+
+        <main class="func-page-layout">
+            <section class="info-strip">
+                <div class="info-strip-item">
+                    <span class="info-strip-label">Pending Insurance Reminders</span>
+                    <span class="info-strip-value" style="color:var(--navy-primary);" id="pendingCountStrip">0 vehicles</span>
+                </div>
+                <div class="info-strip-item">
+                    <span class="info-strip-label">Expiring in ≤ 7 days</span>
+                    <span class="info-strip-value" style="color:var(--danger);" id="urgentCountStrip">0 vehicles</span>
+                </div>
+                <div class="info-strip-item">
+                    <span class="info-strip-label">Conversion Rate</span>
+                    <span class="info-strip-value" style="color:var(--success);">65.8% renew</span>
+                </div>
+            </section>
+
+            <section class="content-grid">
+                <div style="grid-column: 1 / -1;">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Recipients — Insurance Expiry Reminders</h3>
+                            <div class="panel-actions">
+                                <span class="info-chip navy">Filter: Next 30 Days</span>
+                                <span class="info-chip warning">Selected: <span id="selectedCount">0</span></span>
+                                <span class="info-chip gold">
+                                    <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+                                        <input type="checkbox" id="selectAll" style="accent-color:var(--navy-primary);">
+                                        Select All
+                                    </label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="panel-body" style="padding:0;">
+                            <div class="data-table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:44px;padding:12px 14px;">
+                                                <input type="checkbox" id="selectAllHead" style="accent-color:var(--navy-primary);">
+                                            </th>
+                                            <th>Vehicle No.</th>
+                                            <th>Owner Name</th>
+                                            <th>Contact Details</th>
+                                            <th>Vehicle Type</th>
+                                            <th>Insurance Expires On</th>
+                                            <th>Countdown</th>
+                                            <th>Last Reminder</th>
+                                            <th style="text-align:center;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reminderTableBody">
+                                        <tr>
+                                            <td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">
+                                                Loading pending reminders...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+    <script src="../js/dashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            DashboardApp.renderFunctionPage({
+                allowedRoles: ['INSURANCE_AGENCY'],
+                pageTitle: 'Insurance Reminders',
+                pageDescription: 'Send SMS/Email reminders for vehicles nearing Insurance expiry',
+                pageIcon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>`,
+                dashboardLabel: 'Insurance Dashboard',
+                activeMenuKey: 'insuranceReminders'
+            });
+
+            let remindersData = [];
+
+            async function loadReminders() {
+                try {
+                    const response = await fetch('/api/insurance/reminders');
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        remindersData = result.data;
+                        renderTable(remindersData);
+                        updateStats(remindersData);
+                    } else {
+                        showError('Failed to load reminders: ' + result.message);
+                    }
+                } catch (err) {
+                    console.error('Error loading reminders:', err);
+                    showError('Server connection failed. Please ensure the backend is running.');
+                }
+            }
+
+            function renderTable(data) {
+                const tbody = document.getElementById('reminderTableBody');
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">No pending insurance reminders found.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = data.map((r, i) => `
+                    <tr>
+                        <td style="padding:14px;"><input type="checkbox" class="row-check" data-index="${i}" style="accent-color:var(--navy-primary);"></td>
+                        <td><strong>${r.vehicleNo}</strong></td>
+                        <td>${r.ownerName}</td>
+                        <td>
+                            <div style="font-weight:600; color:var(--navy-primary);">${r.phone || 'No Phone'}</div>
+                            <div style="font-size:11px; color:var(--text-muted);">${r.email || 'No Email'}</div>
+                        </td>
+                        <td><span class="info-chip navy">${r.vehicleType || 'N/A'}</span></td>
+                        <td>${formatDate(r.validUpto)}</td>
+                        <td><span class="status-badge ${r.daysRemaining <= 7 ? 'expired' : 'pending'}">${r.daysRemaining} days</span></td>
+                        <td style="color:var(--text-muted);font-size:12px;">— None</td>
+                        <td style="text-align:center;">
+                            <button class="btn btn-primary btn-sm send-single-btn" data-index="${i}" style="padding:6px 12px; font-size:12px; min-height:32px;">
+                                Open Gmail
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                bindCheckboxes();
+                bindSingleSendButtons();
+            }
+
+            function bindSingleSendButtons() {
+                const btns = document.querySelectorAll('.send-single-btn');
+                btns.forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const index = e.target.dataset.index;
+                        const reminder = remindersData[index];
+                        
+                        if (!reminder.email) {
+                            alert('No email address found for this owner.');
+                            return;
+                        }
+
+                        const subject = encodeURIComponent(`Insurance Renewal Reminder: ${reminder.vehicleNo}`);
+                        const body = encodeURIComponent(
+                            `Dear ${reminder.ownerName},\n\n` +
+                            `This is a reminder that the Insurance policy for your vehicle ${reminder.vehicleNo} ` +
+                            `is expiring on ${formatDate(reminder.validUpto)}.\n\n` +
+                            `Please renew it at your earliest convenience to ensure continuous coverage and avoid penalties.\n\n` +
+                            `Regards,\nSmart Saarthi Insurance Team`
+                        );
+                        
+                        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${reminder.email}&su=${subject}&body=${body}`;
+                        window.open(gmailUrl, '_blank');
+
+                        const originalText = e.target.textContent;
+                        e.target.disabled = true;
+                        e.target.textContent = 'Opening...';
+
+                        const result = await sendReminder(reminder, 'Gmail');
+                        
+                        if (result.success) {
+                            e.target.textContent = 'Opened';
+                            e.target.classList.remove('btn-primary');
+                            e.target.classList.add('btn-success');
+                        } else {
+                            e.target.disabled = false;
+                            e.target.textContent = originalText;
+                        }
+                    });
+                });
+            }
+
+            function updateStats(data) {
+                const pendingEl = document.getElementById('pendingCountStrip');
+                if (pendingEl) pendingEl.textContent = data.length + ' vehicles';
+
+                const urgentCount = data.filter(r => r.daysRemaining <= 7).length;
+                const urgentEl = document.getElementById('urgentCountStrip');
+                if (urgentEl) urgentEl.textContent = urgentCount + ' vehicles';
+            }
+
+            function bindCheckboxes() {
+                const selectAll = document.getElementById('selectAll');
+                const selectAllHead = document.getElementById('selectAllHead');
+                const checks = document.querySelectorAll('.row-check');
+                const countEl = document.getElementById('selectedCount');
+
+                function updateCount() {
+                    const sel = document.querySelectorAll('.row-check:checked').length;
+                    if (countEl) countEl.textContent = sel;
+                }
+
+                [selectAll, selectAllHead].forEach(el => {
+                    if (!el) return;
+                    el.addEventListener('change', e => {
+                        const on = e.target.checked;
+                        checks.forEach(c => c.checked = on);
+                        if (selectAll) selectAll.checked = on;
+                        if (selectAllHead) selectAllHead.checked = on;
+                        updateCount();
+                    });
+                });
+                checks.forEach(c => c.addEventListener('change', updateCount));
+            }
+
+            async function sendReminder(reminder, channel) {
+                try {
+                    const response = await fetch('/api/insurance/send-reminder', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            vehicleNo: reminder.vehicleNo,
+                            email: reminder.email,
+                            ownerName: reminder.ownerName,
+                            validUpto: reminder.validUpto,
+                            channel: channel
+                        })
+                    });
+                    return await response.json();
+                } catch (err) {
+                    return { success: false, message: 'Network error' };
+                }
+            }
+
+            function formatDate(dateStr) {
+                const d = new Date(dateStr);
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+            }
+
+            function showError(msg) {
+                const tbody = document.getElementById('reminderTableBody');
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--danger);">${msg}</td></tr>`;
+            }
+
+            loadReminders();
+        });
+    </script>
+</body>
+</html>

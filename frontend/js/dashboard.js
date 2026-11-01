@@ -38,6 +38,7 @@ const DashboardApp = (function() {
         issuePolicy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
         verifyPolicy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
         renewals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+        insuranceReminders: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
         claimsDesk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
         customers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
     };
@@ -57,6 +58,7 @@ const DashboardApp = (function() {
         INSURANCE_AGENCY: [
             { key: 'overview', label: 'Overview', icon: SIDEBAR_ICONS.overview, href: 'insurance-dashboard.html' },
             { key: 'newPolicy', label: 'New Policy', icon: SIDEBAR_ICONS.newPolicy, href: 'new-policy.html' },
+            { key: 'insuranceReminders', label: 'Insurance Reminders', icon: SIDEBAR_ICONS.insuranceReminders, href: 'send-insurance-reminders.html' },
             { key: 'history', label: 'History', icon: SIDEBAR_ICONS.history, href: 'insurance-history.html' }
         ]
     };
@@ -138,6 +140,34 @@ const DashboardApp = (function() {
         brand.insertAdjacentElement('afterend', btn);
     }
 
+    function renderMobileNavCards(auth, activeKey) {
+        const mainContent = document.querySelector('.app-shell .main-content');
+        if (!mainContent || mainContent.querySelector('.mobile-nav-cards')) return;
+
+        const menu = SIDEBAR_MENUS[auth.user.role] || [];
+        if (!menu.length) return;
+
+        const active = activeKey || 'overview';
+        const cardsHtml = menu.map(item => `
+            <a href="${item.href}" class="mobile-nav-card ${item.key === active ? 'active' : ''}" data-menu-key="${item.key}">
+                <span class="mobile-nav-card-icon">${item.icon}</span>
+                <span class="mobile-nav-card-label">${item.label}</span>
+            </a>
+        `).join('');
+
+        const container = document.createElement('section');
+        container.className = 'mobile-services-section';
+        container.innerHTML = `
+            <h3 class="mobile-section-title">Quick Services</h3>
+            <nav class="mobile-nav-cards" aria-label="Services">
+                ${cardsHtml}
+            </nav>
+        `;
+        
+        // Append to the end of main-content for "bottom of dashboard"
+        mainContent.appendChild(container);
+    }
+
     function ensureAppShellLayout(auth, activeKey) {
         if (!document.getElementById('sidebarNav')) {
             const shell = document.createElement('div');
@@ -159,6 +189,7 @@ const DashboardApp = (function() {
         }
         renderSidebar(auth, activeKey || 'overview');
         attachSidebarToggle();
+        renderMobileNavCards(auth, activeKey || 'overview');
     }
 
     function renderSidebar(auth, activeKey) {

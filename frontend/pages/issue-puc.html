@@ -957,6 +957,126 @@
         }
         .cert-action-btn svg { width: 14px; height: 14px; }
 
+        /* ====== Challan Blocked Modal ====== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+            animation: modalFadeIn .3s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-card {
+            background: #FFFFFF;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 480px;
+            overflow: hidden;
+            animation: modalPop .4s cubic-bezier(.17, .89, .32, 1.28);
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.9) translateY(20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            padding: 24px 24px 0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .modal-icon-wrap {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+        .modal-icon-wrap.error {
+            background: #FEF2F2;
+            color: #DC2626;
+        }
+        .modal-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0F172A;
+            letter-spacing: -0.3px;
+        }
+        .modal-body {
+            padding: 20px 24px 24px;
+        }
+        .modal-msg {
+            font-size: 15px;
+            color: #475569;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .modal-details {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .modal-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-detail-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748B;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .modal-detail-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0F172A;
+        }
+        .modal-footer {
+            padding: 0 24px 24px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .modal-btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-family: 'Inter', sans-serif;
+        }
+        .modal-btn-primary {
+            background: #0F172A;
+            color: #FFFFFF;
+        }
+        .modal-btn-primary:hover {
+            background: #1E293B;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -1701,6 +1821,11 @@
                     } else if (challanWarningEl) {
                         challanWarningEl.style.display = 'none';
                     }
+
+                    // Alert modal (same pattern as the insurance portal)
+                    if (hasPendingChallans) {
+                        showChallanBlockModal(String($('f_vehicleNo').value || '').toUpperCase(), pendingChallanCount, d.pendingChallanFine || 0);
+                    }
                     
                     updateGenerateButton();
                 }
@@ -1804,12 +1929,8 @@
                         resultData.pendingChallanFine = pFine;
 
                         applyVehicleSearchResult(resultData);
-                        if (!silent) {
-                            if (pCount > 0) {
-                                showToast('Vehicle found but has ' + pCount + ' pending challan(s)' + (pFine > 0 ? ' (Rs.' + pFine + ')' : '') + '. PUC cannot be issued until challans are cleared.', 'error');
-                            } else {
-                                showToast('Vehicle found. Details auto-filled.', 'success');
-                            }
+                        if (!silent && pCount === 0) {
+                            showToast('Vehicle found. Details auto-filled.', 'success');
                         }
                     }
 
@@ -1959,6 +2080,11 @@
                                         challanWarningEl.innerHTML = '<strong>⚠️ ' + pendingChallanCount + ' Pending Challan(s)</strong><br>PUC certificate cannot be issued until all challans are cleared.';
                                     } else if (challanWarningEl) {
                                         challanWarningEl.style.display = 'none';
+                                    }
+
+                                    // Alert modal (same pattern as the insurance portal)
+                                    if (hasPendingChallans) {
+                                        showChallanBlockModal($('f_vehicleNo').value.toUpperCase(), pendingChallanCount, 0);
                                     }
                                     
                                     updateGenerateButton();
@@ -2447,7 +2573,7 @@
                         }
                         $('pucPreviewPanel').classList.remove('visible');
                         $('pucLoading').classList.remove('visible');
-                        showToast('⛔ ' + (apiRes.message || 'PUC service blocked due to pending challans.'), 'danger');
+                        showChallanBlockModal($('f_vehicleNo').value.toUpperCase(), blockedCount, blockedFine);
                         btn.innerHTML = origHTML;
                         updateGenerateButton();
                         return;
@@ -2586,6 +2712,30 @@
                     window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
                 });
 
+                // Show the "PUC Blocked" alert when the vehicle has pending challans.
+                function showChallanBlockModal(vehicleNo, count, fine) {
+                    const overlay = document.getElementById('pucBlockModal');
+                    if (!overlay) return;
+                    document.getElementById('pucBlockModalVehicleNo').textContent = vehicleNo || ($('f_vehicleNo').value || '').toUpperCase();
+                    document.getElementById('pucBlockModalChallanCount').textContent = count + ' Challan(s)';
+                    document.getElementById('pucBlockModalFineAmount').textContent = '\u20B9 ' + new Intl.NumberFormat('en-IN').format(fine || 0);
+                    document.getElementById('pucBlockModalMsg').textContent = 'This vehicle has pending traffic challans. PUC certificate issuance is strictly prohibited until all penalties are cleared in the system.';
+                    overlay.classList.add('active');
+                }
+
+                function hideChallanBlockModal() {
+                    const overlay = document.getElementById('pucBlockModal');
+                    if (overlay) overlay.classList.remove('active');
+                }
+
+                (function bindChallanBlockModal() {
+                    const closeBtn = document.getElementById('btnClosePucBlockModal');
+                    // Refresh the page on acknowledge to reset the form/state (same as the insurance portal)
+                    if (closeBtn) closeBtn.addEventListener('click', function() { window.location.reload(); });
+                    const overlay = document.getElementById('pucBlockModal');
+                    if (overlay) overlay.addEventListener('click', function(e) { if (e.target === overlay) hideChallanBlockModal(); });
+                })();
+
                 function showToast(msg, type) {
                     const t = document.createElement('div');
                     t.style.cssText = 'position:fixed;top:92px;right:32px;max-width:440px;padding:13px 15px;background:#fff;border:1px solid #E2E8F0;border-left:4px solid #0B4F8A;display:flex;align-items:flex-start;gap:11px;z-index:9999;transform:translateX(500px);opacity:0;transition:all .3s cubic-bezier(.2,.8,.2,1);';
@@ -2666,6 +2816,72 @@
 
                 updateGenerateButton();
             }
+        })();
+    </script>
+
+    <!-- PUC Blocked Modal (pending challans) -->
+    <div id="pucBlockModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-icon-wrap error">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <h3 class="modal-title">PUC Blocked</h3>
+            </div>
+            <div class="modal-body">
+                <p class="modal-msg" id="pucBlockModalMsg"></p>
+                <div class="modal-details">
+                    <div class="modal-detail-row">
+                        <span class="modal-detail-label">Vehicle Number</span>
+                        <span class="modal-detail-value" id="pucBlockModalVehicleNo"></span>
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="modal-detail-label">Pending Challans</span>
+                        <span class="modal-detail-value" id="pucBlockModalChallanCount"></span>
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="modal-detail-label">Total Fine Amount</span>
+                        <span class="modal-detail-value" style="color: #DC2626;" id="pucBlockModalFineAmount"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn modal-btn-primary" id="btnClosePucBlockModal">Understood</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop-mode required notice (mobile phones) -->
+    <div class="desktop-mode-overlay" id="desktopModeOverlay" aria-hidden="true">
+        <div class="desktop-mode-card" role="alertdialog" aria-modal="true" aria-labelledby="desktopModeTitle">
+            <div class="desktop-mode-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                    <path d="M8 21h8M12 17v4"></path>
+                </svg>
+            </div>
+            <h2 class="desktop-mode-title" id="desktopModeTitle">Desktop Mode Required</h2>
+            <p class="desktop-mode-desc">The PUC portal is built for desktop use only. Please open it on a computer.</p>
+            <div class="desktop-mode-steps">
+                Already on a phone? Open the browser menu and tap <strong>Desktop site</strong>, then reload this page.
+            </div>
+            <button type="button" class="desktop-mode-btn" id="desktopModeBtn">I Understand</button>
+        </div>
+    </div>
+    <script>
+        (function () {
+            var isPhone = /iPhone|iPod|Android.*Mobile|Windows Phone|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
+            if (!isPhone) { return; }
+            var overlay = document.getElementById('desktopModeOverlay');
+            if (!overlay) { return; }
+            overlay.classList.add('active');
+            overlay.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('desktopModeBtn').addEventListener('click', function () {
+                overlay.classList.remove('active');
+                overlay.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            });
         })();
     </script>
 </body>

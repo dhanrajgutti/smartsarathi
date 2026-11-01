@@ -399,6 +399,58 @@ html {
     min-height: calc(100vh - 70px);
 }
 
+@media (max-width: 768px) {
+    .main-content .layout {
+        padding: 16px 12px 30px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .content-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .panel-header {
+        padding: 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .panel-actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+    
+    .data-table {
+        min-width: 600px;
+    }
+    
+    .table-responsive {
+        margin: 0 -16px;
+        width: calc(100% + 32px);
+        padding: 0 16px;
+    }
+}
+
+.fuel-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.fuel-chip.petrol { background: #FEF3C7; color: #92400E; }
+.fuel-chip.diesel { background: #DBEAFE; color: #1E40AF; }
+.fuel-chip.cng { background: #D1FAE5; color: #065F46; }
+.fuel-chip.electric { background: #EDE9FE; color: #5B21B6; }
+
 /* ============================================
    HAMBURGER MENU & OVERLAY
    ============================================ */
@@ -415,6 +467,8 @@ html {
     color: var(--white);
     cursor: pointer;
     transition: all 0.2s;
+    flex-shrink: 0;
+    margin-right: auto;
 }
 
 .sidebar-toggle:hover {
@@ -437,6 +491,88 @@ html {
 
 .sidebar-overlay.visible {
     display: block;
+}
+
+/* ============================================
+   MOBILE SERVICE CARDS (replaces hamburger menu)
+   ============================================ */
+.mobile-services-section {
+    display: none;
+    padding: 0 16px 40px;
+    margin-top: 20px;
+}
+
+.mobile-nav-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.mobile-nav-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #FFFFFF;
+    border: 1px solid rgba(11, 79, 138, 0.12);
+    border-radius: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.mobile-nav-card:active {
+    transform: scale(0.97);
+    background: #F1F6FC;
+}
+
+.mobile-nav-card.active {
+    background: #0B4F8A;
+    border-color: #0B4F8A;
+    box-shadow: 0 8px 20px rgba(11, 79, 138, 0.3);
+}
+
+.mobile-nav-card-icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: #E8F1FA;
+    color: #0B4F8A;
+}
+
+.mobile-nav-card-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.mobile-nav-card.active .mobile-nav-card-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: #FFFFFF;
+}
+
+.mobile-nav-card-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0B4F8A;
+}
+
+.mobile-nav-card.active .mobile-nav-card-label {
+    color: #FFFFFF;
+}
+
+@media (max-width: 991px) {
+    .mobile-services-section {
+        display: block;
+    }
+}
+
+@media print {
+    .mobile-services-section {
+        display: none !important;
+    }
 }
 
 /* ============================================
@@ -520,12 +656,12 @@ html {
 .stat-card::after {
     content: '';
     position: absolute;
-    top: 0;
-    right: 0;
-    width: 80px;
-    height: 80px;
-    border-radius: 0 0 0 100%;
-    opacity: 0.08;
+    top: -20px;
+    right: -20px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    opacity: 0.05;
 }
 
 .stat-card.police::after { background: var(--navy-primary); }
@@ -1400,7 +1536,8 @@ html {
     }
 
     .stats-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
     }
 
     .stat-card {
@@ -1408,17 +1545,24 @@ html {
     }
 
     .stat-value {
-        font-size: 24px;
+        font-size: 22px;
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 10px;
+        letter-spacing: 0.2px;
     }
 
     .stat-icon {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
     }
 
     .stat-icon svg {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
     }
 
     .mobile-action-buttons {
@@ -1725,6 +1869,107 @@ table {
 
 @media (min-width: 768px) {
     .mobile-only {
+        display: none !important;
+    }
+}
+
+/* ============================================
+   DESKTOP-MODE REQUIRED NOTICE (mobile phones)
+   ============================================ */
+.desktop-mode-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: linear-gradient(160deg, #0B4F8A 0%, #062F52 100%);
+    box-sizing: border-box;
+}
+
+.desktop-mode-overlay.active {
+    display: flex;
+}
+
+.desktop-mode-card {
+    width: 100%;
+    max-width: 420px;
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 32px 26px 28px;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.desktop-mode-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    background: #E8F1FA;
+    display: grid;
+    place-items: center;
+    color: #0B4F8A;
+}
+
+.desktop-mode-icon svg {
+    width: 36px;
+    height: 36px;
+}
+
+.desktop-mode-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0B4F8A;
+    margin: 0 0 10px;
+    letter-spacing: -0.2px;
+}
+
+.desktop-mode-desc {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: #4A5568;
+    margin: 0 0 18px;
+}
+
+.desktop-mode-steps {
+    text-align: left;
+    background: #F7FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 0 0 22px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #2D3748;
+}
+
+.desktop-mode-steps strong {
+    color: #0B4F8A;
+}
+
+.desktop-mode-btn {
+    width: 100%;
+    min-height: 48px;
+    border: none;
+    border-radius: 10px;
+    background: #0B4F8A;
+    color: #FFFFFF;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s ease;
+}
+
+.desktop-mode-btn:hover {
+    background: #083A66;
+}
+
+@media print {
+    .desktop-mode-overlay {
         display: none !important;
     }
 }

@@ -152,7 +152,10 @@
                                     <tr>
                                         <td><strong>${c.challanNumber}</strong></td>
                                         <td>${c.violationName || 'Traffic Violation'}</td>
-                                        <td>${dateStr}</td>
+                                        <td>
+                                            <div style="font-weight: 600;">${dateStr}</div>
+                                            <div style="font-size: 11px; color: #64748B;">${c.challanTime || '--:--'}</div>
+                                        </td>
                                         <td>${c.location || 'N/A'}</td>
                                         <td>₹${c.totalFineAmount}</td>
                                         <td><span class="status-badge ${statusLabel === 'Paid' ? 'valid' : 'pending'}">${statusLabel}</span></td>

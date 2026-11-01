@@ -325,7 +325,7 @@ public class AdminDAO {
     }
 
     public boolean addChallan(String challanNumber, String vehicleNo, String officerId, String violationIds, 
-                              Integer totalFineAmount, String challanDate, String location, String status, String remarks) {
+                              Integer totalFineAmount, String challanDate, String challanTime, String location, String status, String remarks) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         
@@ -333,7 +333,7 @@ public class AdminDAO {
             conn = DatabaseConfig.getConnection();
             String sql = "INSERT INTO challan (challan_number, vehicle_no, officer_id, violation_ids, total_fine_amount, " +
                          "challan_date, challan_time, location, status, payment_status, remarks) " +
-                         "VALUES (?, ?, ?, ?, ?, TO_DATE(?, 'YYYY-MM-DD'), '00:00:00', ?, ?, 'Unpaid', ?)";
+                         "VALUES (?, ?, ?, ?, ?, TO_DATE(?, 'YYYY-MM-DD'), ?, ?, ?, 'Unpaid', ?)";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, challanNumber);
             pstmt.setString(2, vehicleNo);
@@ -341,9 +341,10 @@ public class AdminDAO {
             pstmt.setString(4, violationIds);
             pstmt.setInt(5, totalFineAmount);
             pstmt.setString(6, challanDate);
-            pstmt.setString(7, location);
-            pstmt.setString(8, status);
-            pstmt.setString(9, remarks);
+            pstmt.setString(7, challanTime != null ? challanTime : "00:00:00");
+            pstmt.setString(8, location);
+            pstmt.setString(9, status);
+            pstmt.setString(10, remarks);
             
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
@@ -499,6 +500,101 @@ public class AdminDAO {
                 e.printStackTrace();
             }
         }
+    }
+
+    public List<Map<String, Object>> getPUCReminders() {
+        List<Map<String, Object>> reminders = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conn = DatabaseConfig.getConnection();
+            // Fetch certificates expiring in the next 30 days
+            String sql = "SELECT pc.vehicle_no, pc.owner_name, o.mobile, o.email, pc.fuel_type, " +
+                          "TO_CHAR(pc.valid_upto, 'YYYY-MM-DD') as valid_upto, " +
+                          "CEIL(pc.valid_upto - CURRENT_DATE) as days_remaining " +
+                          "FROM puc_certificate pc " +
+                          "JOIN vehicle v ON pc.vehicle_no = v.vehicle_no " +
+                          "JOIN owner o ON v.owner_id = o.owner_id " +
+                          "WHERE pc.valid_upto >= CURRENT_DATE AND pc.valid_upto <= CURRENT_DATE + 365 " +
+                          "AND pc.status = 'Valid' " +
+                          "ORDER BY pc.valid_upto ASC";
+            
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                Map<String, Object> reminder = new HashMap<>();
+                reminder.put("vehicleNo", rs.getString("vehicle_no"));
+                reminder.put("ownerName", rs.getString("owner_name"));
+                reminder.put("phone", rs.getString("mobile"));
+                reminder.put("email", rs.getString("email"));
+                reminder.put("fuelType", rs.getString("fuel_type"));
+                reminder.put("validUpto", rs.getString("valid_upto"));
+                reminder.put("daysRemaining", rs.getInt("days_remaining"));
+                reminders.add(reminder);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting PUC reminders: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return reminders;
+    }
+
+    public List<Map<String, Object>> getInsuranceReminders() {
+        List<Map<String, Object>> reminders = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conn = DatabaseConfig.getConnection();
+            // Fetch insurance policies expiring in the next 30 days
+            String sql = "SELECT ip.vehicle_no, o.owner_name, o.mobile, o.email, v.vehicle_type, " +
+                          "TO_CHAR(ip.expiry_date, 'YYYY-MM-DD') as valid_upto, " +
+                          "CEIL(ip.expiry_date - CURRENT_DATE) as days_remaining " +
+                          "FROM insurance_policy ip " +
+                          "JOIN vehicle v ON ip.vehicle_no = v.vehicle_no " +
+                          "JOIN owner o ON v.owner_id = o.owner_id " +
+                          "WHERE ip.expiry_date >= CURRENT_DATE AND ip.expiry_date <= CURRENT_DATE + 365 " +
+                          "ORDER BY ip.expiry_date ASC";
+            
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                Map<String, Object> reminder = new HashMap<>();
+                reminder.put("vehicleNo", rs.getString("vehicle_no"));
+                reminder.put("ownerName", rs.getString("owner_name"));
+                reminder.put("phone", rs.getString("mobile"));
+                reminder.put("email", rs.getString("email"));
+                reminder.put("vehicleType", rs.getString("vehicle_type"));
+                reminder.put("validUpto", rs.getString("valid_upto"));
+                reminder.put("daysRemaining", rs.getInt("days_remaining"));
+                reminders.add(reminder);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting Insurance reminders: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return reminders;
     }
 
     // ==================== OWNERS CRUD ====================

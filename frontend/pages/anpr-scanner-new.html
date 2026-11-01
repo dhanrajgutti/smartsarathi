@@ -1260,6 +1260,7 @@
                         violationIds: violationIdMap[violation] || violation,
                         totalFineAmount: totalFineAmount,
                         challanDate: challanDate,
+                        challanTime: now.toTimeString().split(' ')[0],
                         location: location,
                         status: 'PENDING_PAYMENT',
                         remarks: 'Issued via ANPR scanner'

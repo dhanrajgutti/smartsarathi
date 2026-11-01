@@ -2662,5 +2662,39 @@
             });
         });
     </script>
+
+    <!-- Desktop-mode required notice (mobile phones) -->
+    <div class="desktop-mode-overlay" id="desktopModeOverlay" aria-hidden="true">
+        <div class="desktop-mode-card" role="alertdialog" aria-modal="true" aria-labelledby="desktopModeTitle">
+            <div class="desktop-mode-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                    <path d="M8 21h8M12 17v4"></path>
+                </svg>
+            </div>
+            <h2 class="desktop-mode-title" id="desktopModeTitle">Desktop Mode Required</h2>
+            <p class="desktop-mode-desc">The Insurance portal is built for desktop use only. Please open it on a computer.</p>
+            <div class="desktop-mode-steps">
+                Already on a phone? Open the browser menu and tap <strong>Desktop site</strong>, then reload this page.
+            </div>
+            <button type="button" class="desktop-mode-btn" id="desktopModeBtn">I Understand</button>
+        </div>
+    </div>
+    <script>
+        (function () {
+            var isPhone = /iPhone|iPod|Android.*Mobile|Windows Phone|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
+            if (!isPhone) { return; }
+            var overlay = document.getElementById('desktopModeOverlay');
+            if (!overlay) { return; }
+            overlay.classList.add('active');
+            overlay.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('desktopModeBtn').addEventListener('click', function () {
+                overlay.classList.remove('active');
+                overlay.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            });
+        })();
+    </script>
 </body>
 </html>

@@ -120,7 +120,7 @@
 
         .history-table {
             width: 100%;
-            min-width: 1400px;
+            min-width: 1100px;
             max-width: 100%;
             border-collapse: collapse;
         }
@@ -146,20 +146,15 @@
             text-align: center;
         }
 
-        .history-table thead th.col-vehicle { width: 9%; }
-        .history-table thead th.col-cert { width: 10%; }
-        .history-table thead th.col-owner { width: 10%; }
-        .history-table thead th.col-center { width: 12%; }
-        .history-table thead th.col-mach { width: 9%; }
-        .history-table thead th.col-fuel { width: 6%; text-align: center; }
-        .history-table thead th.col-testdate { width: 8%; }
-        .history-table thead th.col-valid { width: 8%; }
-        .history-table thead th.col-co { width: 5%; text-align: right; }
-        .history-table thead th.col-hc { width: 5%; text-align: right; }
-        .history-table thead th.col-smoke { width: 5%; text-align: right; }
-        .history-table thead th.col-fee { width: 6%; text-align: right; }
-        .history-table thead th.col-status { width: 6%; }
-        .history-table thead th.col-action { width: 5%; text-align: center; }
+        .history-table thead th.col-vehicle { width: 10%; }
+        .history-table thead th.col-cert { width: 15%; }
+        .history-table thead th.col-owner { width: 15%; }
+        .history-table thead th.col-center { width: 15%; }
+        .history-table thead th.col-mach { width: 10%; }
+        .history-table thead th.col-fuel { width: 8%; text-align: center; }
+        .history-table thead th.col-testdate { width: 10%; }
+        .history-table thead th.col-valid { width: 10%; }
+        .history-table thead th.col-status { width: 7%; }
 
         .history-table tbody td {
             padding: 5.5px 5px;
@@ -546,11 +541,11 @@
                 <div class="history-filter-grid">
                     <div class="func-form-group">
                         <label class="func-form-label" for="filterFromDate">From Date</label>
-                        <input id="filterFromDate" type="date" class="func-form-input" value="2025-05-01">
+                        <input id="filterFromDate" type="date" class="func-form-input">
                     </div>
                     <div class="func-form-group">
                         <label class="func-form-label" for="filterToDate">To Date</label>
-                        <input id="filterToDate" type="date" class="func-form-input" value="2025-05-18">
+                        <input id="filterToDate" type="date" class="func-form-input">
                     </div>
                     <div class="func-form-group">
                         <label class="func-form-label" for="filterCertNo">Certificate No.</label>
@@ -632,12 +627,7 @@
                                 <th class="col-fuel">Fuel</th>
                                 <th class="col-testdate">Test Date</th>
                                 <th class="col-valid">Valid Upto</th>
-                                <th class="col-co">CO %</th>
-                                <th class="col-hc">HC ppm</th>
-                                <th class="col-smoke">Smoke %</th>
-                                <th class="col-fee">Fee (₹)</th>
-                                <th class="col-status">Status</th>
-                                <th class="col-action" style="text-align: center;">Action</th>
+                                <th class="col-status">Pass or Fail</th>
                             </tr>
                         </thead>
                         <tbody id="historyTableBody"></tbody>
@@ -682,7 +672,7 @@
 
             async function fetchPUCHistory() {
                 try {
-                    const response = await fetch('/puc/history');
+                    const response = await fetch('/api/puc/history');
                     const result = await response.json();
                     if (result.success && result.data) {
                         PUC_DATA = result.data.map(function(item){
@@ -810,7 +800,7 @@
             function renderEmptyState() {
                 getEl('historyTableBody').innerHTML = [
                     '<tr>',
-                    '<td colspan="15">',
+                    '<td colspan="10">',
                     '<div class="history-empty">',
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">',
                     '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>',
@@ -863,9 +853,6 @@
                 const pageRows = state.filtered.slice(startIndex, startIndex + PAGE_SIZE);
 
                 getEl('historyTableBody').innerHTML = pageRows.map(function(cert, index) {
-                    const coClass = getNumClass(cert.fuel, cert.status, cert.co);
-                    const hcClass = getNumClass(cert.fuel, cert.status, cert.hc);
-                    const smClass = getNumClass(cert.fuel, cert.status, cert.smoke);
                     return [
                         '<tr>',
                         '<td class="col-sr">', String(startIndex + index + 1), '</td>',
@@ -877,26 +864,7 @@
                         '<td class="fuel-cell"><span class="fuel-chip ', getFuelClass(cert.fuel), '">', cert.fuel, '</span></td>',
                         '<td>', cert.testDate, '</td>',
                         '<td>', cert.validDate, (cert.expiringSoon ? '<span style="display:block; font-size:9.5px; color:#B45309; font-weight:700; margin-top:2px;">Soon</span>' : ''), '</td>',
-                        '<td class="num-cell ', coClass, '">', cert.co.toFixed(2), '</td>',
-                        '<td class="num-cell ', hcClass, '">', cert.hc, '</td>',
-                        '<td class="num-cell ', smClass, '">', (cert.fuel === 'Electric' ? '—' : cert.smoke.toFixed(2)), '</td>',
-                        '<td class="money">', formatter.format(cert.fee), '</td>',
                         '<td><span class="status-chip ', getStatusClass(cert.status), '">', cert.status, '</span></td>',
-                        '<td class="action-cell">',
-                        '<button type="button" class="view-btn" data-cert="', cert.certNo, '" title="View certificate">',
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">',
-                        '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>',
-                        '<circle cx="12" cy="12" r="3"></circle>',
-                        '</svg>',
-                        '</button>',
-                        '<button type="button" class="view-btn print" data-cert-print="', cert.certNo, '" title="Print certificate">',
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">',
-                        '<polyline points="6 9 6 2 18 2 18 9"></polyline>',
-                        '<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>',
-                        '<rect x="6" y="14" width="12" height="8"></rect>',
-                        '</svg>',
-                        '</button>',
-                        '</td>',
                         '</tr>'
                     ].join('');
                 }).join('');
@@ -993,15 +961,25 @@
                 URL.revokeObjectURL(url);
             }
 
+            // Default the date range to the span covered by the available certificates
+            function applyDefaultDateRange() {
+                if (!PUC_DATA.length) return;
+                const dates = PUC_DATA.map(function(cert) {
+                    return cert.testDateIso;
+                }).filter(Boolean).sort();
+                if (!dates.length) return;
+                getEl('filterFromDate').value = dates[0];
+                getEl('filterToDate').value = dates[dates.length - 1];
+            }
+
             function resetFilters() {
-                getEl('filterFromDate').value = '2025-05-01';
-                getEl('filterToDate').value = '2025-05-18';
                 getEl('filterCertNo').value = '';
                 getEl('filterVehicleNo').value = '';
                 getEl('filterFuelType').value = 'All';
                 getEl('filterOwnerName').value = '';
                 getEl('filterPUCCenter').value = 'All';
                 getEl('filterStatus').value = 'All';
+                applyDefaultDateRange();
                 applyFilters();
             }
 
@@ -1052,6 +1030,7 @@
             function initPage() {
                 populateCenterOptions();
                 bindEvents();
+                applyDefaultDateRange();
                 applyFilters();
             }
 

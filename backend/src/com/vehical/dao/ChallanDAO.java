@@ -157,7 +157,7 @@ public class ChallanDAO {
                 String insertSql = "INSERT INTO challan (challan_number, vehicle_no, officer_id, violation_ids, " +
                                   "total_fine_amount, challan_date, challan_time, location, status, " +
                                   "payment_status, payment_date, payment_reference) " +
-                                  "VALUES (?, 'DEMO-VEHICLE', 'PO00000', '15', 0, SYSDATE, '00:00:00', " +
+                                  "VALUES (?, 'DEMO-VEHICLE', 'PO00000', '15', 0, SYSDATE, TO_CHAR(SYSDATE, 'HH24:MI:SS'), " +
                                   "'Demo Location', ?, 'Paid', SYSDATE, ?)";
                 
                 pstmt = conn.prepareStatement(insertSql);

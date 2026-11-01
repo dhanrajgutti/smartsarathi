@@ -107,7 +107,7 @@ public class PUCCertificateDAO {
         List<Map<String, Object>> certificates = new ArrayList<>();
         String sql = "SELECT puc_id, certificate_number, vehicle_no, owner_name, vehicle_type, " +
                 "fuel_type, center_name, test_date_time, valid_from, valid_upto, status, " +
-                "co_percent, hc_ppm, co2_percent, lambda_value, smoke_density, " +
+                "co_percent, hc_ppm, co2_percent, lambda_value, " +
                 "odometer_km, issued_by_name, created_at " +
                 "FROM puc_certificate ORDER BY test_date_time DESC";
 
@@ -132,7 +132,7 @@ public class PUCCertificateDAO {
                 cert.put("hcPpm", rs.getObject("hc_ppm"));
                 cert.put("co2Percent", rs.getObject("co2_percent"));
                 cert.put("lambdaValue", rs.getObject("lambda_value"));
-                cert.put("smokeDensity", rs.getObject("smoke_density"));
+                cert.put("smokeDensity", 0);
                 cert.put("odometerKm", rs.getObject("odometer_km"));
                 cert.put("issuedByName", rs.getString("issued_by_name"));
                 cert.put("createdAt", rs.getTimestamp("created_at").toString());

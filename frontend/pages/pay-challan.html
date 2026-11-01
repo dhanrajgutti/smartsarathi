@@ -314,8 +314,11 @@
                                 <div class="info-value">${challan.vehicleNo}</div>
                             </div>
                             <div>
-                                <div class="info-label">Issue Date</div>
-                                <div class="info-value">${dateStr}</div>
+                                <div class="info-label">Issue Date & Time</div>
+                                <div class="info-value">
+                                    <div style="font-weight: 600;">${dateStr}</div>
+                                    <div style="font-size: 11px; color: #64748B;">${challan.challanTime || '--:--'}</div>
+                                </div>
                             </div>
                             <div>
                                 <div class="info-label">Location</div>

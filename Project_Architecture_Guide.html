@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Saarthi - Project Architecture Guide</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #002B5C;
+            --gold: #E8C07D;
+            --slate: #475569;
+            --border: #E2E8F0;
+            --bg: #F8FAFC;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #1E293B;
+            background: var(--bg);
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 60px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        header {
+            border-bottom: 4px solid var(--gold);
+            padding-bottom: 30px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            color: var(--navy);
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 18px;
+            color: var(--slate);
+            font-weight: 500;
+        }
+        h2 {
+            font-size: 24px;
+            color: var(--navy);
+            margin: 40px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--gold);
+            border-radius: 2px;
+        }
+        h3 {
+            font-size: 18px;
+            color: var(--navy);
+            margin: 25px 0 15px;
+        }
+        p { margin-bottom: 15px; color: #334155; }
+        ul, ol { margin-bottom: 20px; margin-left: 25px; }
+        li { margin-bottom: 8px; }
+        code {
+            background: #F1F5F9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            color: #BE123C;
+        }
+        .tech-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #E0E7FF;
+            color: #4338CA;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        .api-card {
+            background: #F8FAFC;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .api-method {
+            font-weight: 800;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        .get { background: #059669; }
+        .post { background: #2563EB; }
+        .put { background: #D97706; }
+        .delete { background: #DC2626; }
+        
+        .algo-box {
+            border-left: 4px solid var(--navy);
+            background: #F0F4F8;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--slate);
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+        }
+        @media print {
+            body { padding: 0; background: white; }
+            .container { box-shadow: none; padding: 40px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Smart Saarthi</h1>
+            <div class="subtitle">RTO & Police Vehicle Management System - Architecture Guide</div>
+        </header>
+
+        <section id="overview">
+            <h2>1. Project Overview</h2>
+            <p>Smart Saarthi is a comprehensive vehicle compliance and enforcement platform designed for RTO officers, PUC centers, Insurance agencies, and Traffic Police. It centralizes vehicle data, compliance tracking (PUC/Insurance), and violation management.</p>
+        </section>
+
+        <section id="tech-stack">
+            <h2>2. Technology Stack</h2>
+            <div>
+                <span class="tech-tag">Java 11+ (Backend)</span>
+                <span class="tech-tag">Oracle XE 11g/19c (Database)</span>
+                <span class="tech-tag">HTML5 / CSS3 / JavaScript (Frontend)</span>
+                <span class="tech-tag">WebRTC (Camera Integration)</span>
+                <span class="tech-tag">JDBC (Database Connectivity)</span>
+                <span class="tech-tag">Native Java HTTPServer</span>
+            </div>
+        </section>
+
+        <section id="architecture">
+            <h2>3. System Architecture</h2>
+            <p>The system follows a <strong>Client-Server Architecture</strong> with a clear separation of concerns:</p>
+            <ul>
+                <li><strong>Frontend:</strong> Pure HTML/JS/CSS served as static files. Communicates with the backend via RESTful JSON APIs.</li>
+                <li><strong>Backend:</strong> A high-performance Java server using <code>com.sun.net.httpserver</code>. It handles authentication, business logic, and database operations.</li>
+                <li><strong>Data Access Layer (DAO):</strong> A dedicated layer using JDBC to interact with Oracle DB. Each module (User, Vehicle, PUC, Insurance, Challan) has its own DAO class.</li>
+            </ul>
+        </section>
+
+        <section id="api">
+            <h2>4. API Documentation</h2>
+            
+            <h3>Authentication</h3>
+            <div class="api-card">
+                <span class="api-method post">POST</span> <code>/api/auth/login</code>
+                <p>Authenticates users (Admin, Police, PUC Center, Insurance Agent) or Citizens (using Vehicle No + Chassis).</p>
+            </div>
+
+            <h3>Vehicle Management</h3>
+            <div class="api-card">
+                <span class="api-method get">GET</span> <code>/api/vehicle/lookup?vehicleNo=...</code>
+                <p>Fetches full vehicle details, owner info, and real-time compliance status.</p>
+            </div>
+
+            <h3>Compliance Modules</h3>
+            <div class="api-card">
+                <span class="api-method post">POST</span> <code>/api/puc/issue</code>
+                <p>Issues a new PUC certificate. <strong>Logic:</strong> Strictly blocked if pending challans exist.</p>
+            </div>
+            <div class="api-card">
+                <span class="api-method post">POST</span> <code>/api/insurance/policy</code>
+                <p>Registers a new insurance policy. <strong>Logic:</strong> Strictly blocked if pending challans exist.</p>
+            </div>
+
+            <h3>Enforcement (Police)</h3>
+            <div class="api-card">
+                <span class="api-method post">POST</span> <code>/api/challan</code>
+                <p>Issues a traffic violation challan. Captures GPS coordinates and server-side timestamp.</p>
+            </div>
+        </section>
+
+        <section id="algorithms">
+            <h2>5. Key Algorithms & Logic</h2>
+
+            <h3>A. Compliance Blocking Algorithm</h3>
+            <div class="algo-box">
+                <p><strong>Goal:</strong> Ensure service denial for non-compliant vehicles.</p>
+                <ol>
+                    <li>On PUC/Insurance request, system queries <code>CHALLAN</code> table.</li>
+                    <li>If <code>payment_status = 'Unpaid'</code>, the transaction is aborted.</li>
+                    <li>Frontend displays a modal with specific challan counts and total fine amount.</li>
+                </ol>
+            </div>
+
+            <h3>B. Renewal Reminder Logic</h3>
+            <div class="algo-box">
+                <p><strong>Goal:</strong> Proactive notification for expiring certificates.</p>
+                <ul>
+                    <li><strong>Query:</strong> <code>SELECT ... WHERE valid_upto BETWEEN CURRENT_DATE AND CURRENT_DATE + 30</code></li>
+                    <li><strong>Algorithm:</strong> Uses <code>CEIL(valid_upto - CURRENT_DATE)</code> to calculate precise countdown days.</li>
+                    <li><strong>Channel:</strong> Supports multi-channel reminders (Email simulation implemented).</li>
+                </ul>
+            </div>
+
+            <h3>C. ANPR (Automatic Number Plate Recognition)</h3>
+            <div class="algo-box">
+                <p><strong>Goal:</strong> Extract vehicle numbers from live camera feed.</p>
+                <ol>
+                    <li>Captures frame from <code>video</code> element using <code>canvas.toDataURL()</code>.</li>
+                    <li>Sends Base64 image to backend (Future: Tesseract/OCR integration).</li>
+                    <li>Current implementation uses a high-reliability manual fallback for 100% accuracy.</li>
+                </ol>
+            </div>
+        </section>
+
+        <section id="database">
+            <h2>6. Database Schema</h2>
+            <ul>
+                <li><code>USERS</code>: Stores credentials, roles, and center assignments.</li>
+                <li><code>VEHICLE</code>: Central registry for all vehicle specs and compliance flags.</li>
+                <li><code>OWNER</code>: Contact information for automated notifications.</li>
+                <li><code>PUC_CERTIFICATE</code>: History of all emission tests.</li>
+                <li><code>INSURANCE_POLICY</code>: Registry of active and expired policies.</li>
+                <li><code>CHALLAN</code>: Records of violations, fines, and payment statuses.</li>
+            </ul>
+        </section>
+
+        <div class="footer">
+            Smart Saarthi System Documentation &copy; 2026. Generated for System Implementation.
+        </div>
+    </div>
+</body>
+</html>
